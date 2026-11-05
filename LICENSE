@@ -5,7 +5,7 @@ Este código, o design e os textos deste repositório são de uso exclusivo do R
 em outro estabelecimento sem autorização por escrito.
 
 Qualquer uso autorizado deve manter visível o crédito de autoria: o selo
-<script src="https://footer.davicjc.com/projetos/footer-davi/footer_davicjc.js"></script>
+<script src="https://footer.davicjc.com/projetos/footer-davi/footer_davicjc.js" defer></script>
 numa página visível, ou "Feito por Davi Castro — https://davicjc.com".
 
 Contato: contato@davicjc.com
