@@ -1,0 +1,61 @@
+rules_version = '2';
+// Rainbow Pub
+// - Cardápio e dados do bar: leitura pública, escrita só da equipe logada (sem auto-cadastro).
+// - Pedidos: qualquer pessoa cria, mas só com o bar aceitando pedidos, formato fechado
+//   e (com GPS ligado) coordenadas dentro da caixa do bar. Lista/edição só da equipe.
+//   O cliente lê o próprio pedido pelo id (acompanhar o status).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function equipe() { return request.auth != null; }
+    function loja() { return get(/databases/$(database)/documents/config/loja).data; }
+
+    match /config/{doc} {
+      allow read: if true;
+      allow write: if equipe();
+    }
+    match /categorias/{id} {
+      allow read: if true;
+      allow write: if equipe();
+    }
+    match /itens/{id} {
+      allow read: if true;
+      allow write: if equipe();
+    }
+
+    function geoOk(d) {
+      let g = loja().gps;
+      return !g.ativo || (
+        d.geo is map
+        && d.geo.lat is number && d.geo.lng is number
+        && d.geo.lat >= g.caixa.latMin && d.geo.lat <= g.caixa.latMax
+        && d.geo.lng >= g.caixa.lngMin && d.geo.lng <= g.caixa.lngMax
+      );
+    }
+
+    function pedidoValido(d) {
+      return d.keys().hasOnly(['nome', 'local', 'obs', 'itens', 'total', 'status', 'pago', 'criadoEm', 'geo', 'noite'])
+        && d.keys().hasAll(['nome', 'local', 'itens', 'total', 'status', 'pago', 'criadoEm', 'noite'])
+        && d.nome is string && d.nome.size() >= 2 && d.nome.size() <= 40
+        && d.local is string && d.local.size() >= 1 && d.local.size() <= 40
+        && (!('obs' in d) || (d.obs is string && d.obs.size() <= 240))
+        && d.itens is list && d.itens.size() >= 1 && d.itens.size() <= 40
+        && d.total is number && d.total > 0 && d.total <= 5000
+        && d.status == 'novo'
+        && d.pago == false
+        && d.criadoEm == request.time
+        && d.noite is string && d.noite.size() == 10;
+    }
+
+    match /pedidos/{id} {
+      allow get: if true;
+      allow list: if equipe();
+      allow create: if loja().aceitandoPedidos == true && pedidoValido(request.resource.data) && geoOk(request.resource.data);
+      allow update, delete: if equipe();
+    }
+
+    match /{doc=**} {
+      allow read, write: if false;
+    }
+  }
+}

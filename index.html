@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Rainbow Pub · Cardápio e pedidos na mesa</title>
+  <meta name="description" content="Cardápio do Rainbow Pub, no Centro de Uberlândia: drinks autorais, cervejas, doses, porções, espetinhos e jantinha. Peça pelo celular de dentro do bar.">
+  <meta name="theme-color" content="#0F0B0E">
+  <meta name="color-scheme" content="dark">
+  <meta name="darkreader-lock">
+  <link rel="canonical" href="https://rainbowpub.cjc.pics/">
+  <link rel="icon" href="img/icone.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Rainbow Pub · Mais cor, mais vibes, mais Rainbow!">
+  <meta property="og:description" content="Cardápio e pedidos pelo celular, direto da sua mesa. Rua Professor Pedro Bernardo, 20 · Centro · Uberlândia.">
+  <meta property="og:url" content="https://rainbowpub.cjc.pics/">
+  <meta property="og:image" content="https://rainbowpub.cjc.pics/img/og.png">
+  <meta property="og:locale" content="pt_BR">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500&family=Caveat:wght@600;700&family=Yellowtail&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://firestore.googleapis.com">
+  <link rel="stylesheet" href="css/site.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BarOrPub",
+    "name": "Rainbow Pub",
+    "url": "https://rainbowpub.cjc.pics/",
+    "slogan": "Mais cor, mais vibes, mais Rainbow!",
+    "address": {"@type": "PostalAddress", "streetAddress": "Rua Professor Pedro Bernardo, 20", "addressLocality": "Uberlândia", "addressRegion": "MG", "addressCountry": "BR"},
+    "openingHoursSpecification": [
+      {"@type": "OpeningHoursSpecification", "dayOfWeek": ["Tuesday","Wednesday","Thursday","Sunday"], "opens": "19:00", "closes": "03:00"},
+      {"@type": "OpeningHoursSpecification", "dayOfWeek": ["Friday","Saturday"], "opens": "20:00", "closes": "05:00"}
+    ],
+    "servesCuisine": ["Drinks", "Petiscos", "Espetinhos"],
+    "sameAs": ["https://www.instagram.com/rainbowpubudi/"]
+  }
+  </script>
+</head>
+<body>
+  <div class="aviso" id="aviso" hidden></div>
+
+  <header class="letreiro" id="topo">
+    <div class="parede" aria-hidden="true"></div>
+    <h1 class="marca" aria-label="Rainbow Pub">
+      <span class="marca__linha" aria-hidden="true">
+        <span class="marca__letra">R</span>
+        <svg class="arco" id="arco" viewBox="0 0 100 112" role="presentation"></svg>
+        <span class="marca__letra">INBOW</span>
+      </span>
+      <span class="marca__pub" aria-hidden="true">Pub</span>
+    </h1>
+
+    <p class="bordao">Mais cor, mais vibes, mais Rainbow!</p>
+
+    <div class="situacao" id="situacao">
+      <span class="situacao__ponto" aria-hidden="true"></span>
+      <span id="situacaoTexto">Rua Professor Pedro Bernardo, 20 · Centro</span>
+    </div>
+
+    <ol class="legenda" id="legenda" aria-label="Seções do cardápio"></ol>
+
+    <p class="como">Escolha, ponha na comanda e mande. <strong>A gente leva até você.</strong></p>
+  </header>
+
+  <nav class="faixas" id="faixas" aria-label="Categorias"></nav>
+
+  <main class="cardapio" id="cardapio" aria-live="polite">
+    <p class="carregando" id="carregando">Acendendo o cardápio…</p>
+  </main>
+
+  <section class="casa" id="casa" aria-labelledby="casaTitulo">
+    <h2 class="titulo" id="casaTitulo"><span class="titulo__fio"></span>O Rainbow<span class="titulo__fio"></span></h2>
+    <div class="casa__bloco">
+      <h3>Horário</h3>
+      <ul class="horarios" id="horarios"></ul>
+    </div>
+    <div class="casa__bloco">
+      <h3>Endereço</h3>
+      <p id="endereco">Rua Professor Pedro Bernardo, 20 · Centro · Uberlândia-MG</p>
+      <a class="link" id="mapa" href="#" target="_blank" rel="noopener">Abrir no mapa</a>
+    </div>
+    <div class="casa__bloco">
+      <h3>Instagram</h3>
+      <a class="link" id="insta" href="https://www.instagram.com/rainbowpubudi/" target="_blank" rel="noopener">@rainbowpubudi</a>
+    </div>
+    <p class="despedida">Vem pro Rainbow, vem ser feliz!</p>
+  </section>
+
+  <!-- Comanda: aba presa embaixo + folha que sobe -->
+  <button class="aba" id="aba" type="button" hidden aria-controls="comanda">
+    <span class="aba__picote" aria-hidden="true"></span>
+    <span class="aba__rotulo" id="abaRotulo">Comanda</span>
+    <span class="aba__total" id="abaTotal"></span>
+  </button>
+
+  <div class="veu" id="veu" hidden></div>
+  <section class="comanda" id="comanda" role="dialog" aria-modal="true" aria-labelledby="comandaTitulo" hidden>
+    <div class="comanda__papel">
+      <div class="comanda__picote" aria-hidden="true"></div>
+      <button class="comanda__fechar" id="fechar" type="button" aria-label="Fechar comanda">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+      <header class="comanda__topo">
+        <p class="comanda__casa">Rainbow Pub</p>
+        <h2 id="comandaTitulo">Comanda</h2>
+        <p class="comanda__data" id="comandaData"></p>
+      </header>
+      <div id="comandaCorpo"></div>
+    </div>
+  </section>
+
+  <script type="module" src="js/cardapio.js"></script>
+  <script src="https://footer.davicjc.com/projetos/footer-davi/footer_davicjc.js"></script>
+</body>
+</html>
