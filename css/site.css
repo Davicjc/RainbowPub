@@ -117,9 +117,46 @@ body > * { position: relative; z-index: 1; }
 }
 .ligado .parede { opacity: 1; }
 .letreiro > *:not(.parede) { position: relative; z-index: 1; }
-/* Entrada: o letreiro ocupa a tela inteira, nada do cardápio aparece embaixo */
-.letreiro--entrada { min-height: 100svh; padding-top: 72px; }
-.letreiro--entrada > .aviso { position: absolute; top: 0; left: 0; right: 0; z-index: 2; }
+/* Entrada: tela inteira em 3 faixas — status discreto em cima, marca no meio (um pouco acima
+   do centro), botões presos embaixo */
+.letreiro--entrada {
+  min-height: 100svh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: stretch;
+  justify-items: center;
+  gap: 0;
+  padding: 0 var(--margem) calc(22px + env(safe-area-inset-bottom));
+}
+.entrada__topo { justify-self: stretch; margin-inline: calc(-1 * var(--margem)); display: flex; flex-direction: column; align-items: center; }
+.entrada__topo .aviso { align-self: stretch; }
+.entrada__topo .situacao {
+  margin-top: 14px;
+  padding: 0;
+  border: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--texto-2);
+}
+.entrada__topo .situacao__ponto { width: 7px; height: 7px; }
+.entrada__meio {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  transform: translateY(-5svh);
+}
+.letreiro--entrada .marca__linha { font-size: clamp(76px, 24vw, 172px); }
+.letreiro--entrada .marca__pub { font-size: clamp(44px, 13.5vw, 92px); }
+.letreiro--entrada .bordao { font-size: clamp(24px, 7vw, 34px); }
+.letreiro--entrada .acoes { margin-top: 0; }
+
+/* Quem já pediu: boas-vindas com o nome + frase da casa */
+.volta { margin-top: 4px; max-width: 32ch; }
+.volta__nome { margin: 0; font-weight: 700; font-size: 21px; color: var(--texto); }
+.volta__frase { margin: 4px 0 0; font-size: 16.5px; color: var(--texto-2); }
 
 .marca { margin: 0; display: flex; flex-direction: column; align-items: center; line-height: 1; }
 .marca__linha {

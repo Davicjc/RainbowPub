@@ -470,6 +470,32 @@ function acompanhar(id) {
   }, () => { corpo.innerHTML = '<p class="nota">Seu pedido foi enviado. Não deu para acompanhar agora.</p>'; });
 }
 
+/* ─────────────── Boas-vindas de quem já pediu ─────────────── */
+// O nome fica guardado no celular depois do primeiro pedido; na volta o letreiro cumprimenta.
+const FRASES = [
+  'Mais cor, mais vibes, mais Rainbow!',
+  'Vem pro Rainbow, vem ser feliz!',
+  'Seja você. Seja livre.',
+  'Somos todas as cores.',
+  'Aqui ninguém precisa se explicar. Chegou, é de casa.',
+  'O drink é feito na hora e o atendimento é de coração.',
+  'Bora brindar, colocar o papo em dia e rir com a galera.',
+  'A sinuca está te esperando.',
+];
+function boasVindas() {
+  let jaPediu = false;
+  try { jaPediu = JSON.parse(localStorage.getItem(MEUS) || '[]').length > 0; } catch { /* nada */ }
+  const nome = (localStorage.getItem(NOME) || '').trim().split(' ')[0];
+  if (!jaPediu || !nome) return;
+  const quinta = new Date().getDay() === 4;
+  const frases = quinta ? [...FRASES, 'Hoje é quinta: caipirinha em dobro até a meia-noite!'] : FRASES;
+  const bordao = $('.bordao').textContent.trim();
+  const opcoes = frases.filter((f) => f !== bordao);
+  $('#voltaNome').textContent = `Que bom te ver de volta, ${nome}!`;
+  $('#voltaFrase').textContent = quinta ? frases[frases.length - 1] : opcoes[Math.floor(Math.random() * opcoes.length)];
+  $('#volta').hidden = false;
+}
+
 /* ─────────────── Início ─────────────── */
 function montar() {
   montarCasa();
@@ -483,6 +509,7 @@ function montar() {
 }
 
 desenharArco($('#arco'));
-acender($('#topo'), [$('.bordao'), $('#situacao'), $('#acoes')]);
+boasVindas();
+acender($('#topo'), [$('.bordao'), $('#volta'), $('#situacao'), $('#acoes')]);
 carregar();
 setInterval(montarCasa, 60_000);

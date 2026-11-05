@@ -41,17 +41,27 @@
 <body>
   <header class="letreiro letreiro--entrada" id="topo">
     <div class="parede" aria-hidden="true"></div>
-    <p class="aviso" id="aviso" hidden></p>
-    <h1 class="marca" aria-label="Rainbow Pub">
-      <span class="marca__linha" aria-hidden="true">
-        <span class="marca__letra">R</span>
-        <svg class="arco" id="arco" viewBox="0 0 100 112" role="presentation"></svg>
-        <span class="marca__letra">INBOW</span>
-      </span>
-      <span class="marca__pub" aria-hidden="true">Pub</span>
-    </h1>
-    <p class="bordao">Mais cor, mais vibes, mais Rainbow!</p>
-    <p class="situacao" id="situacao"><span class="situacao__ponto" aria-hidden="true"></span><span id="situacaoTexto">Rua Professor Pedro Bernardo, 20 · Centro</span></p>
+    <div class="entrada__topo">
+      <p class="aviso" id="aviso" hidden></p>
+      <p class="situacao" id="situacao"><span class="situacao__ponto" aria-hidden="true"></span><span id="situacaoTexto">Rua Professor Pedro Bernardo, 20 · Centro</span></p>
+    </div>
+
+    <div class="entrada__meio">
+      <h1 class="marca" aria-label="Rainbow Pub">
+        <span class="marca__linha" aria-hidden="true">
+          <span class="marca__letra">R</span>
+          <svg class="arco" id="arco" viewBox="0 0 100 112" role="presentation"></svg>
+          <span class="marca__letra">INBOW</span>
+        </span>
+        <span class="marca__pub" aria-hidden="true">Pub</span>
+      </h1>
+      <p class="bordao">Mais cor, mais vibes, mais Rainbow!</p>
+      <div class="volta" id="volta" hidden>
+        <p class="volta__nome" id="voltaNome"></p>
+        <p class="volta__frase" id="voltaFrase"></p>
+      </div>
+    </div>
+
     <div class="acoes" id="acoes">
       <a class="botao botao--grande" href="#cardapio">Fazer meu pedido</a>
       <a class="botao botao--contorno" href="sobre/">Conhecer o Rainbow</a>
