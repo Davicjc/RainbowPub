@@ -71,7 +71,7 @@ export const LOJA_INICIAL = {
   nome: 'Rainbow Pub',
   aceitandoPedidos: true,
   endereco: 'Rua Professor Pedro Bernardo, 20 · Centro · Uberlândia-MG',
-  mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Rainbow+Pub+Rua+Professor+Pedro+Bernardo+20+Uberl%C3%A2ndia',
+  mapsUrl: 'https://maps.google.com/?cid=7690246692483849217',
   instagram: 'rainbowpubudi',
   whatsapp: '',
   aviso: 'Rainbow 2 anos: festa nos dias 13, 14 e 15 de novembro!',
@@ -88,8 +88,8 @@ export const LOJA_INICIAL = {
     'Quarta, quinta, domingo e feriados · 19h às 3h',
     'Sexta, sábado e véspera de feriado · 20h às 6h',
     'Entrada free. Em eventos da casa a entrada e o horário podem ser especiais.',
-  ],  // Centro da Rua Prof. Pedro Bernardo (OSM). Calibrar no painel com "usar minha localização" dentro do bar.
-  gps: { ativo: true, lat: -18.9225574, lng: -48.2766035, raio: 150 },
+  ],  // Ponto do Rainbow Pub no Google Maps (R. Prof. Pedro Bernardo, 20). Ajuste fino no painel: Bar → "Usar minha localização agora".
+  gps: { ativo: true, lat: -18.9232877, lng: -48.2787283, raio: 150 },
 };
 LOJA_INICIAL.gps.caixa = caixaDe(LOJA_INICIAL.gps.lat, LOJA_INICIAL.gps.lng, LOJA_INICIAL.gps.raio);
 
