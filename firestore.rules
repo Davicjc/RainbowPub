@@ -7,7 +7,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function equipe() { return request.auth != null; }
+    // Equipe = conta logada E com documento em equipe/{uid}. Mesmo que alguém reative o
+    // auto-cadastro por engano, conta nova não entra no painel sem estar nessa lista.
+    function equipe() {
+      return request.auth != null && exists(/databases/$(database)/documents/equipe/$(request.auth.uid));
+    }
     function loja() { return get(/databases/$(database)/documents/config/loja).data; }
 
     match /config/{doc} {
@@ -56,6 +60,11 @@ service cloud.firestore {
       allow list: if equipe();
       allow create: if loja().aceitandoPedidos == true && pedidoValido(request.resource.data) && geoOk(request.resource.data);
       allow update, delete: if equipe();
+    }
+
+    match /equipe/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if equipe();
     }
 
     match /{doc=**} {

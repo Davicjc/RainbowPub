@@ -10,6 +10,11 @@ Site do **Rainbow Pub** (Rua Professor Pedro Bernardo, 20 · Centro · Uberlând
 - **Anti-fraude por GPS:** o pedido só sai se o celular estiver dentro do raio do bar. As regras do Firestore conferem de novo no servidor (caixa de lat/lng gravada pelo painel), então não adianta burlar a página.
 - **Painel (`/adm/`):** login da equipe (sem cadastro público), pedidos ao vivo com som, botão "recebendo pedidos", cardápio (preço, esgotado, foto, ordem), dados do bar e do GPS, relatórios por noite com CSV e impressão.
 
+## Segurança
+- Sem cadastro público (desligado no Firebase Auth). Painel só para contas que estão na coleção `equipe/{uid}` do Firestore.
+- **Pessoa nova na equipe:** criar o usuário em Authentication e depois um documento `equipe/<UID>` com o campo `email` (pelo console do Firestore).
+- Cardápio, textos e fotos: leitura pública, escrita só da equipe. Pedidos: qualquer um cria (com GPS dentro do raio e formato fechado); só a equipe lista e altera.
+
 ## Técnica
 HTML, CSS e JavaScript puros (ES modules), sem build. Firebase Auth + Firestore (projeto `rainbowpub-ecd71`, São Paulo), fotos em base64 no Firestore. Hospedagem no Cloudflare Pages (push na `main` publica).
 
