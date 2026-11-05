@@ -79,17 +79,16 @@ export const LOJA_INICIAL = {
   semana: [
     { abre: '19:00', fecha: '03:00' }, // domingo
     null,                               // segunda
-    { abre: '19:00', fecha: '03:00' }, // terça
+    null,                               // terça
     { abre: '19:00', fecha: '03:00' }, // quarta
     { abre: '19:00', fecha: '03:00' }, // quinta
-    { abre: '20:00', fecha: '05:00' }, // sexta
-    { abre: '20:00', fecha: '05:00' }, // sábado
-  ],
-  horariosTexto: [
-    'Terça a quinta, domingos e feriados · 19h às 3h',
-    'Sexta, sábado e vésperas de feriado · 20h às 5h',
-  ],
-  // Centro da Rua Prof. Pedro Bernardo (OSM). Calibrar no painel com "usar minha localização" dentro do bar.
+    { abre: '20:00', fecha: '06:00' }, // sexta
+    { abre: '20:00', fecha: '06:00' }, // sábado
+  ],  horariosTexto: [
+    'Quarta, quinta, domingo e feriados · 19h às 3h',
+    'Sexta, sábado e véspera de feriado · 20h às 6h',
+    'Entrada free. Em eventos da casa a entrada e o horário podem ser especiais.',
+  ],  // Centro da Rua Prof. Pedro Bernardo (OSM). Calibrar no painel com "usar minha localização" dentro do bar.
   gps: { ativo: true, lat: -18.9225574, lng: -48.2766035, raio: 150 },
 };
 LOJA_INICIAL.gps.caixa = caixaDe(LOJA_INICIAL.gps.lat, LOJA_INICIAL.gps.lng, LOJA_INICIAL.gps.raio);
