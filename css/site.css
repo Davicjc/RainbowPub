@@ -117,6 +117,9 @@ body > * { position: relative; z-index: 1; }
 }
 .ligado .parede { opacity: 1; }
 .letreiro > *:not(.parede) { position: relative; z-index: 1; }
+/* Entrada: o letreiro ocupa a tela inteira, nada do cardápio aparece embaixo */
+.letreiro--entrada { min-height: 100svh; padding-top: 72px; }
+.letreiro--entrada > .aviso { position: absolute; top: 0; left: 0; right: 0; z-index: 2; }
 
 .marca { margin: 0; display: flex; flex-direction: column; align-items: center; line-height: 1; }
 .marca__linha {
