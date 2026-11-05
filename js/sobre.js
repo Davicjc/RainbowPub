@@ -35,6 +35,13 @@ function montarFotos(fotos) {
   $('#galeria').innerHTML = fotos.map((f, i) => `<button type="button" data-i="${i}" aria-label="Ver foto${f.legenda ? ': ' + esc(f.legenda) : ''}">
     <img src="${esc(f.img)}" alt="${esc(f.legenda || 'Foto do Rainbow Pub')}" loading="lazy">
     ${f.legenda ? `<span>${esc(f.legenda)}</span>` : ''}</button>`).join('');
+  // desktop (3 colunas): 1ª foto usa 4 células; a última estica para fechar a linha
+  const ultima = $('#galeria').lastElementChild;
+  if (ultima && fotos.length > 1) {
+    const sobra = (4 + fotos.length - 1) % 3;
+    if (sobra === 1) ultima.classList.add('completa-3');
+    if (sobra === 2) ultima.classList.add('completa-2');
+  }
   $('#galeria').onclick = (e) => {
     const b = e.target.closest('[data-i]');
     if (!b) return;
