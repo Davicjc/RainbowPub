@@ -71,6 +71,15 @@
           <span>Cardápio</span>
         </button>
 
+        <button type="button" class="item-menu" data-ir-tela="pagina">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          <span>Página</span>
+        </button>
+
         <button type="button" class="item-menu" data-ir-tela="bar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M3 9l9-6 9 6v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -272,7 +281,100 @@
         <div id="container-categorias" class="lista-categorias"></div>
       </section>
 
-      <!-- 3. TELA DO BAR (config/loja) -->
+      <!-- 3. TELA DA PÁGINA (config/sobre + fotos) -->
+      <section id="tela-pagina" class="secao-painel" hidden>
+        <div class="cabecalho-secao">
+          <div>
+            <h1>Página</h1>
+            <p class="texto-apoio">Textos da página O Rainbow, valores, programação e fotos do bar.</p>
+          </div>
+          <div class="acoes-cabecalho">
+            <a href="../sobre/" target="_blank" rel="noopener noreferrer" class="btn btn-secundario">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+              <span>Ver a página</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Seção 1: Textos da página O Rainbow -->
+        <form id="form-sobre-pagina" class="cartao-painel pilha-blocos">
+          <h2 class="titulo-subbloco sem-margem">Textos da página O Rainbow</h2>
+
+          <div class="grade-campos-2">
+            <div class="campo campo-largo">
+              <label for="sobre-chamada">Chamada</label>
+              <input type="text" id="sobre-chamada" required placeholder="Ex.: Somos todas as cores.">
+            </div>
+            <div class="campo campo-largo">
+              <label for="sobre-texto">Texto</label>
+              <textarea id="sobre-texto" rows="4" required placeholder="Apresentação do Rainbow Pub..."></textarea>
+            </div>
+          </div>
+
+          <div class="separador-bloco sem-margem"></div>
+          <div>
+            <h3 class="subtitulo-bloco">Valores (4 cartões)</h3>
+            <div id="grade-valores-sobre" class="grade-valores-sobre"></div>
+          </div>
+
+          <div class="separador-bloco sem-margem"></div>
+          <div class="bloco-programacao-sobre">
+            <div class="cabecalho-subbloco-linha">
+              <div>
+                <h3 class="subtitulo-bloco sem-margem">Programação (até 6 itens)</h3>
+                <p class="texto-apoio">Destaques semanais ou permanentes exibidos na página.</p>
+              </div>
+              <button type="button" id="btn-adicionar-programacao" class="btn btn-secundario btn-compacto">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                <span>Adicionar</span>
+              </button>
+            </div>
+            <div id="lista-programacao-sobre" class="lista-programacao-sobre"></div>
+          </div>
+
+          <div class="separador-bloco sem-margem"></div>
+          <div class="campo">
+            <label for="sobre-maioridade">Maioridade</label>
+            <input type="text" id="sobre-maioridade" required placeholder="Ex.: Rolê 18+. Bebida alcoólica só para maiores de 18 anos.">
+          </div>
+
+          <div class="barra-salvar-bar">
+            <button type="submit" id="btn-salvar-sobre" class="btn btn-principal">Salvar textos</button>
+          </div>
+        </form>
+
+        <!-- Seção 2: Fotos do bar -->
+        <div class="cartao-painel pilha-blocos">
+          <div class="cabecalho-subbloco-linha">
+            <div>
+              <h2 class="titulo-subbloco sem-margem">Fotos do bar</h2>
+              <p class="texto-apoio">Galeria exibida na página O Rainbow.</p>
+            </div>
+            <div class="acoes-upload-fotos">
+              <span id="progresso-upload-fotos" class="progresso-upload-fotos" hidden aria-live="polite"></span>
+              <input type="file" id="input-adicionar-fotos" accept="image/*" multiple hidden>
+              <button type="button" id="btn-adicionar-fotos" class="btn btn-principal">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                <span>Adicionar fotos</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="grade-fotos-bar" class="grade-fotos-bar"></div>
+        </div>
+      </section>
+
+      <!-- 4. TELA DO BAR (config/loja) -->
       <section id="tela-bar" class="secao-painel" hidden>
         <div class="cabecalho-secao">
           <div>
@@ -529,6 +631,15 @@
           <path d="M4 18h10"/>
         </svg>
         <span>Cardápio</span>
+      </button>
+
+      <button type="button" class="aba-mobile" data-ir-tela="pagina">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+        <span>Página</span>
       </button>
 
       <button type="button" class="aba-mobile" data-ir-tela="bar">

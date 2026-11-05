@@ -11,6 +11,7 @@ import {
   STATUS,
   codigo,
   LOJA_INICIAL,
+  SOBRE_INICIAL,
   CATEGORIAS_INICIAIS,
   ITENS_INICIAIS,
 } from '../js/base.js';
@@ -26,6 +27,7 @@ import {
   doc,
   collection,
   getDocs,
+  addDoc,
   setDoc,
   updateDoc,
   deleteDoc,
@@ -36,6 +38,7 @@ import {
   orderBy,
   writeBatch,
   Timestamp,
+  serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js';
 
 const DIAS_SEMANA = [
@@ -59,6 +62,10 @@ const estado = {
   somSilenciado: localStorage.getItem('rainbow_adm_mudo') === '1',
   primeiraCargaPedidos: true,
   loja: structuredClone(LOJA_INICIAL),
+  sobre: structuredClone(SOBRE_INICIAL),
+  sobreProgramacao: structuredClone(SOBRE_INICIAL.programacao),
+  sobreEditando: false,
+  fotos: [],
   categorias: [...CATEGORIAS_INICIAIS],
   itens: [...ITENS_INICIAIS],
   mapaItens: new Map(),
@@ -349,12 +356,13 @@ onAuthStateChanged(auth, (usuario) => {
   }
 });
 
-// ─── Navegação entre Telas (Pedidos, Cardápio, Bar, Relatórios) ───
+// ─── Navegação entre Telas (Pedidos, Cardápio, Página, Bar, Relatórios) ───
 function navegarParaTela(nomeTela) {
   estado.telaAtiva = nomeTela;
   const mapaSecoes = {
     pedidos: document.getElementById('tela-pedidos'),
     cardapio: document.getElementById('tela-cardapio'),
+    pagina: document.getElementById('tela-pagina'),
     bar: document.getElementById('tela-bar'),
     relatorios: document.getElementById('tela-relatorios'),
   };
@@ -420,6 +428,45 @@ function iniciarEscutasFirestore() {
     }
   );
   estado.cancelarEscutas.push(unsubLoja);
+
+  // 1.b config/sobre
+  const unsubSobre = onSnapshot(
+    doc(db, 'config', 'sobre'),
+    (snap) => {
+      if (snap.exists()) {
+        estado.sobre = normalizarSobre(snap.data());
+      } else {
+        estado.sobre = structuredClone(SOBRE_INICIAL);
+      }
+      if (!estado.sobreEditando) {
+        preencherFormularioSobre();
+      }
+    },
+    () => {
+      mostrarToast('Erro ao sincronizar textos da página.', 'erro');
+    }
+  );
+  estado.cancelarEscutas.push(unsubSobre);
+
+  // 1.c fotos
+  const unsubFotos = onSnapshot(
+    collection(db, 'fotos'),
+    (snap) => {
+      const lista = [];
+      snap.forEach((d) => lista.push({ id: d.id, ...d.data() }));
+      lista.sort(
+        (a, b) =>
+          Number(a.ordem || 0) - Number(b.ordem || 0) ||
+          String(a.id || '').localeCompare(String(b.id || ''))
+      );
+      estado.fotos = lista;
+      renderizarFotosBar();
+    },
+    () => {
+      mostrarToast('Erro ao carregar fotos do bar.', 'erro');
+    }
+  );
+  estado.cancelarEscutas.push(unsubFotos);
 
   // 2. categorias
   const unsubCategorias = onSnapshot(
@@ -1395,6 +1442,487 @@ containerCategorias.addEventListener('submit', async (e) => {
     }
   }
 });
+
+// ─── 3.5. TELA DA PÁGINA (config/sobre + fotos) ───
+const formSobrePagina = document.getElementById('form-sobre-pagina');
+const inputSobreChamada = document.getElementById('sobre-chamada');
+const inputSobreTexto = document.getElementById('sobre-texto');
+const inputSobreMaioridade = document.getElementById('sobre-maioridade');
+const gradeValoresSobre = document.getElementById('grade-valores-sobre');
+const listaProgramacaoSobre = document.getElementById('lista-programacao-sobre');
+const btnAdicionarProgramacao = document.getElementById('btn-adicionar-programacao');
+const btnSalvarSobre = document.getElementById('btn-salvar-sobre');
+
+const btnAdicionarFotos = document.getElementById('btn-adicionar-fotos');
+const inputAdicionarFotos = document.getElementById('input-adicionar-fotos');
+const progressoUploadFotos = document.getElementById('progresso-upload-fotos');
+const gradeFotosBar = document.getElementById('grade-fotos-bar');
+
+function normalizarSobre(dados) {
+  const base = SOBRE_INICIAL;
+  const valoresOrig = Array.isArray(dados?.valores) ? dados.valores : base.valores;
+  const valores = [0, 1, 2, 3].map((idx) => ({
+    titulo: String(valoresOrig[idx]?.titulo ?? base.valores[idx]?.titulo ?? ''),
+    texto: String(valoresOrig[idx]?.texto ?? base.valores[idx]?.texto ?? ''),
+  }));
+
+  const progOrig = Array.isArray(dados?.programacao) ? dados.programacao : base.programacao;
+  const programacao = progOrig.slice(0, 6).map((item) => ({
+    quando: String(item?.quando ?? ''),
+    titulo: String(item?.titulo ?? ''),
+    texto: String(item?.texto ?? ''),
+  }));
+
+  return {
+    chamada: String(dados?.chamada ?? base.chamada),
+    texto: String(dados?.texto ?? base.texto),
+    valores,
+    programacao,
+    maioridade: String(dados?.maioridade ?? base.maioridade),
+  };
+}
+
+function renderizarValoresSobre(valores) {
+  if (!gradeValoresSobre) return;
+  const lista = Array.isArray(valores) && valores.length === 4 ? valores : SOBRE_INICIAL.valores;
+  gradeValoresSobre.innerHTML = lista
+    .map(
+      (v, idx) => `<div class="cartao-valor-sobre">
+        <div class="campo">
+          <label for="sobre-val-titulo-${idx}">Valor ${idx + 1} · Título</label>
+          <input type="text" id="sobre-val-titulo-${idx}" data-valor-titulo="${idx}" value="${esc(v.titulo || '')}" required placeholder="Ex.: Acolhimento">
+        </div>
+        <div class="campo">
+          <label for="sobre-val-texto-${idx}">Texto</label>
+          <textarea id="sobre-val-texto-${idx}" rows="2" data-valor-texto="${idx}" required placeholder="Frase curta deste valor...">${esc(v.texto || '')}</textarea>
+        </div>
+      </div>`
+    )
+    .join('');
+}
+
+function lerProgramacaoDoDom() {
+  if (!listaProgramacaoSobre) return;
+  const blocos = listaProgramacaoSobre.querySelectorAll('[data-prog-item]');
+  if (blocos.length === 0) return;
+  const novaLista = [];
+  blocos.forEach((bloco) => {
+    const quando = bloco.querySelector('[data-prog-campo="quando"]')?.value ?? '';
+    const titulo = bloco.querySelector('[data-prog-campo="titulo"]')?.value ?? '';
+    const texto = bloco.querySelector('[data-prog-campo="texto"]')?.value ?? '';
+    novaLista.push({ quando, titulo, texto });
+  });
+  estado.sobreProgramacao = novaLista.slice(0, 6);
+}
+
+function renderizarProgramacaoSobre() {
+  if (!listaProgramacaoSobre) return;
+  const lista = estado.sobreProgramacao;
+  if (btnAdicionarProgramacao) {
+    btnAdicionarProgramacao.disabled = lista.length >= 6;
+  }
+
+  if (lista.length === 0) {
+    listaProgramacaoSobre.innerHTML = `<div class="estado-vazio">Nenhum item na programação.</div>`;
+    return;
+  }
+
+  listaProgramacaoSobre.innerHTML = lista
+    .map(
+      (item, idx) => `<div class="item-programacao-sobre" data-prog-item="${idx}">
+        <div class="topo-item-programacao">
+          <span class="rotulo-item-programacao">Item ${idx + 1} de ${lista.length}</span>
+          <div class="acoes-item-programacao">
+            <button type="button" class="btn-ordem" data-acao-prog="subir" data-idx="${idx}" ${idx === 0 ? 'disabled' : ''} title="Subir item" aria-label="Subir item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="18 15 12 9 6 15"/>
+              </svg>
+            </button>
+            <button type="button" class="btn-ordem" data-acao-prog="descer" data-idx="${idx}" ${idx === lista.length - 1 ? 'disabled' : ''} title="Descer item" aria-label="Descer item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <button type="button" class="btn btn-perigo btn-compacto" data-acao-prog="remover" data-idx="${idx}">Remover</button>
+          </div>
+        </div>
+        <div class="grade-campos-2">
+          <div class="campo">
+            <label>Quando</label>
+            <input type="text" data-prog-campo="quando" value="${esc(item.quando || '')}" required placeholder="Ex.: Toda quinta">
+          </div>
+          <div class="campo">
+            <label>Título</label>
+            <input type="text" data-prog-campo="titulo" value="${esc(item.titulo || '')}" required placeholder="Ex.: Caipirinha em dobro">
+          </div>
+          <div class="campo campo-largo">
+            <label>Texto</label>
+            <textarea rows="2" data-prog-campo="texto" required placeholder="Descrição da programação...">${esc(item.texto || '')}</textarea>
+          </div>
+        </div>
+      </div>`
+    )
+    .join('');
+}
+
+function preencherFormularioSobre() {
+  if (!formSobrePagina) return;
+  const s = normalizarSobre(estado.sobre);
+  inputSobreChamada.value = s.chamada;
+  inputSobreTexto.value = s.texto;
+  inputSobreMaioridade.value = s.maioridade;
+  renderizarValoresSobre(s.valores);
+  estado.sobreProgramacao = structuredClone(s.programacao);
+  renderizarProgramacaoSobre();
+}
+
+formSobrePagina.addEventListener('focusin', () => {
+  estado.sobreEditando = true;
+});
+
+btnAdicionarProgramacao.addEventListener('click', () => {
+  estado.sobreEditando = true;
+  lerProgramacaoDoDom();
+  if (estado.sobreProgramacao.length >= 6) {
+    mostrarToast('A programação permite no máximo 6 itens.', 'erro');
+    return;
+  }
+  estado.sobreProgramacao.push({ quando: '', titulo: '', texto: '' });
+  renderizarProgramacaoSobre();
+});
+
+listaProgramacaoSobre.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-acao-prog]');
+  if (!btn) return;
+  estado.sobreEditando = true;
+  lerProgramacaoDoDom();
+
+  const acao = btn.getAttribute('data-acao-prog');
+  const idx = Number(btn.getAttribute('data-idx'));
+  const lista = estado.sobreProgramacao;
+  if (Number.isNaN(idx) || idx < 0 || idx >= lista.length) return;
+
+  if (acao === 'remover') {
+    lista.splice(idx, 1);
+  } else if (acao === 'subir' && idx > 0) {
+    [lista[idx - 1], lista[idx]] = [lista[idx], lista[idx - 1]];
+  } else if (acao === 'descer' && idx < lista.length - 1) {
+    [lista[idx + 1], lista[idx]] = [lista[idx], lista[idx + 1]];
+  }
+  renderizarProgramacaoSobre();
+});
+
+formSobrePagina.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  lerProgramacaoDoDom();
+
+  const chamada = inputSobreChamada.value.trim();
+  const texto = inputSobreTexto.value.trim();
+  const maioridade = inputSobreMaioridade.value.trim();
+
+  const valores = [0, 1, 2, 3].map((idx) => ({
+    titulo: (gradeValoresSobre.querySelector(`[data-valor-titulo="${idx}"]`)?.value || '').trim(),
+    texto: (gradeValoresSobre.querySelector(`[data-valor-texto="${idx}"]`)?.value || '').trim(),
+  }));
+
+  const programacao = estado.sobreProgramacao.slice(0, 6).map((p) => ({
+    quando: String(p.quando || '').trim(),
+    titulo: String(p.titulo || '').trim(),
+    texto: String(p.texto || '').trim(),
+  }));
+
+  if (
+    !chamada ||
+    !texto ||
+    !maioridade ||
+    valores.some((v) => !v.titulo || !v.texto) ||
+    programacao.some((p) => !p.quando || !p.titulo || !p.texto)
+  ) {
+    mostrarToast('Preencha todos os campos de textos, valores e programação.', 'erro');
+    return;
+  }
+
+  btnSalvarSobre.disabled = true;
+  try {
+    const payload = {
+      chamada,
+      texto,
+      valores,
+      programacao,
+      maioridade,
+    };
+    await setDoc(doc(db, 'config', 'sobre'), payload);
+    estado.sobre = structuredClone(payload);
+    estado.sobreEditando = false;
+    mostrarToast('Textos da página salvos com sucesso.', 'sucesso');
+  } catch {
+    mostrarToast('Erro ao salvar os textos da página.', 'erro');
+  } finally {
+    btnSalvarSobre.disabled = false;
+  }
+});
+
+// Processamento de foto da galeria:
+// createImageBitmap com imageOrientation:'from-image', máx 1280px JPEG 0.8;
+// se > 380 KB, refaz com 0.7 e depois 1100px; se ainda passar, recusa.
+async function processarFotoGaleria(arquivo) {
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(arquivo, { imageOrientation: 'from-image' });
+  } catch {
+    bitmap = await createImageBitmap(arquivo);
+  }
+
+  try {
+    const largOrig = bitmap.width;
+    const altOrig = bitmap.height;
+    if (!largOrig || !altOrig) {
+      throw new Error('Arquivo de imagem inválido.');
+    }
+
+    const gerarJpeg = (maxLado, qualidade) => {
+      let larg = largOrig;
+      let alt = altOrig;
+      if (larg > maxLado || alt > maxLado) {
+        if (larg >= alt) {
+          alt = Math.max(1, Math.round((alt * maxLado) / larg));
+          larg = maxLado;
+        } else {
+          larg = Math.max(1, Math.round((larg * maxLado) / alt));
+          alt = maxLado;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = larg;
+      canvas.height = alt;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(bitmap, 0, 0, larg, alt);
+      return canvas.toDataURL('image/jpeg', qualidade);
+    };
+
+    const LIMITE_380KB = 380 * 1024;
+    let dataUrl = gerarJpeg(1280, 0.8);
+    if (dataUrl.length > LIMITE_380KB) {
+      dataUrl = gerarJpeg(1280, 0.7);
+    }
+    if (dataUrl.length > LIMITE_380KB) {
+      dataUrl = gerarJpeg(1100, 0.7);
+    }
+    if (dataUrl.length > LIMITE_380KB) {
+      throw new Error(`A foto "${arquivo.name || 'selecionada'}" ultrapassou 380 KB mesmo após comprimir.`);
+    }
+    return dataUrl;
+  } finally {
+    if (bitmap && typeof bitmap.close === 'function') {
+      bitmap.close();
+    }
+  }
+}
+
+btnAdicionarFotos.addEventListener('click', () => {
+  inputAdicionarFotos.click();
+});
+
+inputAdicionarFotos.addEventListener('change', async () => {
+  const arquivos = Array.from(inputAdicionarFotos.files || []);
+  inputAdicionarFotos.value = '';
+  if (arquivos.length === 0) return;
+
+  btnAdicionarFotos.disabled = true;
+  progressoUploadFotos.hidden = false;
+
+  let maiorOrdem = estado.fotos.reduce((m, f) => Math.max(m, Number(f.ordem || 0)), 0);
+  let enviadas = 0;
+
+  try {
+    for (let i = 0; i < arquivos.length; i++) {
+      progressoUploadFotos.textContent = `Enviando ${i + 1} de ${arquivos.length}…`;
+      try {
+        const img = await processarFotoGaleria(arquivos[i]);
+        maiorOrdem += 1;
+        await addDoc(collection(db, 'fotos'), {
+          img,
+          legenda: '',
+          ordem: maiorOrdem,
+          ativo: true,
+          criadoEm: serverTimestamp(),
+        });
+        enviadas += 1;
+      } catch (err) {
+        mostrarToast(err?.message || 'Erro ao enviar foto.', 'erro');
+      }
+    }
+
+    if (enviadas > 0) {
+      mostrarToast(
+        enviadas === 1 ? '1 foto adicionada.' : `${enviadas} fotos adicionadas.`,
+        'sucesso'
+      );
+    }
+  } finally {
+    progressoUploadFotos.hidden = true;
+    progressoUploadFotos.textContent = '';
+    btnAdicionarFotos.disabled = false;
+  }
+});
+
+function renderizarFotosBar() {
+  if (!gradeFotosBar) return;
+
+  // Preserva legenda em edição caso chegue snapshot enquanto o usuário digita
+  const ativoEl = document.activeElement;
+  const idLegendaFocada = ativoEl?.getAttribute?.('data-legenda-foto') || null;
+  const valorLegendaFocada = idLegendaFocada ? ativoEl.value : null;
+
+  if (estado.fotos.length === 0) {
+    gradeFotosBar.innerHTML = `<div class="estado-vazio">Nenhuma foto ainda. As fotos aparecem na página O Rainbow.</div>`;
+    return;
+  }
+
+  gradeFotosBar.innerHTML = estado.fotos
+    .map((f, idx) => {
+      const ativa = f.ativo !== false;
+      return `<article class="cartao-foto-bar ${ativa ? '' : 'inativa'}" data-card-foto="${esc(f.id)}">
+        <div class="moldura-foto-bar">
+          <img src="${esc(f.img || '')}" alt="${esc(f.legenda || 'Foto do Rainbow Pub')}" loading="lazy">
+        </div>
+        <div class="corpo-foto-bar">
+          <div class="campo">
+            <label for="legenda-foto-${esc(f.id)}">Legenda (até 80 caracteres)</label>
+            <input type="text" id="legenda-foto-${esc(f.id)}" maxlength="80" data-legenda-foto="${esc(f.id)}" value="${esc(f.legenda || '')}" placeholder="Opcional...">
+          </div>
+          <label class="switch-padrao">
+            <input type="checkbox" data-toggle-foto-ativa="${esc(f.id)}" ${ativa ? 'checked' : ''}>
+            <span class="trilho-switch"></span>
+            <span>Mostrar no site</span>
+          </label>
+          <div class="rodape-foto-bar">
+            <div class="botoes-ordem-foto">
+              <button type="button" class="btn-ordem" data-acao-foto="subir" data-id="${esc(f.id)}" ${idx === 0 ? 'disabled' : ''} title="Subir foto" aria-label="Subir foto">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="18 15 12 9 6 15"/>
+                </svg>
+              </button>
+              <button type="button" class="btn-ordem" data-acao-foto="descer" data-id="${esc(f.id)}" ${idx === estado.fotos.length - 1 ? 'disabled' : ''} title="Descer foto" aria-label="Descer foto">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+            </div>
+            <button type="button" class="btn btn-perigo btn-compacto" data-acao-foto="excluir" data-id="${esc(f.id)}">Excluir</button>
+          </div>
+        </div>
+      </article>`;
+    })
+    .join('');
+
+  if (idLegendaFocada) {
+    const novoInput = gradeFotosBar.querySelector(`[data-legenda-foto="${CSS.escape(idLegendaFocada)}"]`);
+    if (novoInput) {
+      novoInput.value = valorLegendaFocada;
+      novoInput.focus();
+    }
+  }
+}
+
+// Salva legenda ao sair do campo (focusout) ou pressionar Enter
+gradeFotosBar.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.matches('[data-legenda-foto]')) {
+    e.preventDefault();
+    e.target.blur();
+  }
+});
+
+gradeFotosBar.addEventListener('focusout', async (e) => {
+  const input = e.target.closest('[data-legenda-foto]');
+  if (!input) return;
+  const id = input.getAttribute('data-legenda-foto');
+  const foto = estado.fotos.find((f) => f.id === id);
+  if (!foto) return;
+
+  const novaLegenda = input.value.trim().slice(0, 80);
+  input.value = novaLegenda;
+  if (novaLegenda === String(foto.legenda || '')) return;
+
+  try {
+    await updateDoc(doc(db, 'fotos', id), { legenda: novaLegenda });
+    mostrarToast('Legenda salva.', 'sucesso');
+  } catch {
+    mostrarToast('Erro ao salvar legenda.', 'erro');
+  }
+});
+
+// Interruptor "Mostrar no site" (ativo)
+gradeFotosBar.addEventListener('change', async (e) => {
+  const chk = e.target.closest('[data-toggle-foto-ativa]');
+  if (!chk) return;
+  const id = chk.getAttribute('data-toggle-foto-ativa');
+  const ativo = chk.checked;
+  try {
+    await updateDoc(doc(db, 'fotos', id), { ativo });
+    mostrarToast(ativo ? 'Foto visível no site.' : 'Foto ocultada do site.');
+  } catch {
+    chk.checked = !ativo;
+    mostrarToast('Erro ao atualizar visibilidade da foto.', 'erro');
+  }
+});
+
+// Botões subir, descer e excluir foto
+gradeFotosBar.addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-acao-foto]');
+  if (!btn) return;
+  const acao = btn.getAttribute('data-acao-foto');
+  const id = btn.getAttribute('data-id');
+  const idx = estado.fotos.findIndex((f) => f.id === id);
+  if (idx < 0) return;
+
+  if (acao === 'subir' || acao === 'descer') {
+    const idxAlvo = acao === 'subir' ? idx - 1 : idx + 1;
+    if (idxAlvo < 0 || idxAlvo >= estado.fotos.length) return;
+
+    const atual = estado.fotos[idx];
+    const vizinha = estado.fotos[idxAlvo];
+    let ordemAtual = Number(atual.ordem || idx + 1);
+    let ordemVizinha = Number(vizinha.ordem || idxAlvo + 1);
+    if (ordemAtual === ordemVizinha) {
+      ordemAtual = idx + 1;
+      ordemVizinha = idxAlvo + 1;
+    }
+
+    btn.disabled = true;
+    try {
+      const lote = writeBatch(db);
+      lote.update(doc(db, 'fotos', atual.id), { ordem: ordemVizinha });
+      lote.update(doc(db, 'fotos', vizinha.id), { ordem: ordemAtual });
+      await lote.commit();
+      mostrarToast('Ordem das fotos atualizada.');
+    } catch {
+      mostrarToast('Erro ao reordenar fotos.', 'erro');
+    } finally {
+      btn.disabled = false;
+    }
+  } else if (acao === 'excluir') {
+    const ok = await confirmarAcao({
+      titulo: 'Excluir foto',
+      mensagem: 'Deseja realmente excluir esta foto da galeria da página O Rainbow?',
+      textoConfirmar: 'Excluir foto',
+      perigo: true,
+    });
+    if (!ok) return;
+
+    btn.disabled = true;
+    try {
+      await deleteDoc(doc(db, 'fotos', id));
+      mostrarToast('Foto excluída.', 'sucesso');
+    } catch {
+      mostrarToast('Erro ao excluir foto.', 'erro');
+      btn.disabled = false;
+    }
+  }
+});
+
+preencherFormularioSobre();
+renderizarFotosBar();
 
 // ─── 4. TELA DO BAR (config/loja) ───
 const formConfigBar = document.getElementById('form-config-bar');

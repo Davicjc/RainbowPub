@@ -1281,6 +1281,152 @@ svg {
   justify-content: flex-end;
 }
 
+/* ─── 3.5. Tela da Página (O Rainbow + Galeria) ─── */
+.sem-margem {
+  margin: 0;
+}
+
+.cabecalho-subbloco-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.grade-valores-sobre {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cartao-valor-sobre {
+  background-color: var(--superficie-2);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bloco-programacao-sobre {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lista-programacao-sobre {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.item-programacao-sobre {
+  background-color: var(--superficie-2);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.topo-item-programacao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rotulo-item-programacao {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--texto-2);
+}
+
+.acoes-item-programacao {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.acoes-upload-fotos {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.progresso-upload-fotos {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--rosa);
+}
+
+.grade-fotos-bar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.grade-fotos-bar > .estado-vazio {
+  grid-column: 1 / -1;
+}
+
+.cartao-foto-bar {
+  background-color: var(--superficie-2);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cartao-foto-bar.inativa .moldura-foto-bar {
+  opacity: 0.55;
+}
+
+.moldura-foto-bar {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background-color: var(--fundo);
+  border-bottom: 1px solid var(--linha);
+  overflow: hidden;
+}
+
+.moldura-foto-bar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.corpo-foto-bar {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.rodape-foto-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px solid var(--linha);
+}
+
+.botoes-ordem-foto {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* ─── 4. Tela de Relatórios ─── */
 .cabecalho-impressao {
   display: none;
@@ -1528,7 +1674,7 @@ svg {
   /* Barra inferior fixa com padding-right: 72px para não cobrir o rodapé de assinatura */
   .barra-inferior-mobile {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     position: fixed;
     left: 0;
     right: 0;
@@ -1553,7 +1699,7 @@ svg {
     border: none;
     background: transparent;
     color: var(--texto-2);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 500;
     border-radius: var(--raio);
     cursor: pointer;
@@ -1600,8 +1746,13 @@ svg {
   .grade-campos-2,
   .grade-campos-3,
   .grade-campos-4,
+  .grade-valores-sobre,
   .grade-relatorios {
     grid-template-columns: 1fr;
+  }
+
+  .grade-fotos-bar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .grade-metricas {
@@ -1653,6 +1804,7 @@ svg {
   #tela-login,
   #tela-pedidos,
   #tela-cardapio,
+  #tela-pagina,
   #tela-bar,
   #modal-confirmacao,
   #container-toasts {

@@ -22,6 +22,10 @@ service cloud.firestore {
       allow read: if true;
       allow write: if equipe();
     }
+    match /fotos/{id} {
+      allow read: if true;
+      allow write: if equipe();
+    }
 
     function geoOk(d) {
       let g = loja().gps;

@@ -74,8 +74,8 @@ export const LOJA_INICIAL = {
   mapsUrl: 'https://www.google.com/maps/search/?api=1&query=Rainbow+Pub+Rua+Professor+Pedro+Bernardo+20+Uberl%C3%A2ndia',
   instagram: 'rainbowpubudi',
   whatsapp: '',
-  aviso: '',
-  locais: ['Mesa', 'Balcão', 'Sinuca', 'Calçada'],
+  aviso: 'Rainbow 2 anos: festa nos dias 13, 14 e 15 de novembro!',
+  locais: ['Mesa', 'Balcão', 'Sinuca', 'Varanda'],
   semana: [
     { abre: '19:00', fecha: '03:00' }, // domingo
     null,                               // segunda
@@ -93,6 +93,23 @@ export const LOJA_INICIAL = {
   gps: { ativo: true, lat: -18.9225574, lng: -48.2766035, raio: 150 },
 };
 LOJA_INICIAL.gps.caixa = caixaDe(LOJA_INICIAL.gps.lat, LOJA_INICIAL.gps.lng, LOJA_INICIAL.gps.raio);
+
+// Página "O Rainbow" (sobre/). Textos tirados do Instagram do bar (@rainbowpubudi), editáveis no painel.
+export const SOBRE_INICIAL = {
+  chamada: 'Somos todas as cores.',
+  texto: 'O Rainbow Pub é um bar LGBTQIA+ no Centro de Uberlândia. Nasceu para ser mais do que um lugar de diversão: um espaço de acolhimento, liberdade e resistência, onde cada pessoa pode simplesmente ser quem é. Drink preparado na hora, atendimento de coração e muita farra desde 2024.',
+  valores: [
+    { titulo: 'Acolhimento', texto: 'Aqui ninguém precisa se explicar. Chegou, é de casa.' },
+    { titulo: 'Liberdade', texto: 'Seja você. Seja livre. Do jeito que você é.' },
+    { titulo: 'Resistência', texto: 'Existir também é um ato político. Ninguém volta pro armário.' },
+    { titulo: 'Farra', texto: 'Drink na hora, sinuca, espetinho e papo em dia até de madrugada.' },
+  ],
+  programacao: [
+    { quando: 'Toda quinta', titulo: 'Caipirinha em dobro', texto: '2 copões de 550 ml por R$ 25, das 19h à meia-noite.' },
+    { quando: 'O ano todo', titulo: 'Seu aniversário merece um Rainbow', texto: 'Você traz a galera, a gente entra com bolo Rainbow, brindes e mimos. Chama a gente no Instagram.' },
+  ],
+  maioridade: 'Rolê 18+. Bebida alcoólica só para maiores de 18 anos.',
+};
 
 // As seis faixas do arco-íris do letreiro, uma por categoria, na ordem do cardápio.
 export const CATEGORIAS_INICIAIS = [

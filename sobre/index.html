@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>O Rainbow · Pub LGBTQIA+ no Centro de Uberlândia</title>
+  <meta name="description" content="Rainbow Pub: bar LGBTQIA+ no Centro de Uberlândia. Espaço de acolhimento, liberdade e resistência. Programação, fotos, horário e como chegar.">
+  <meta name="theme-color" content="#0F0B0E">
+  <meta name="color-scheme" content="dark">
+  <meta name="darkreader-lock">
+  <link rel="canonical" href="https://rainbowpub.cjc.pics/sobre/">
+  <link rel="icon" href="../img/icone.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="O Rainbow · Somos todas as cores">
+  <meta property="og:description" content="Bar LGBTQIA+ no Centro de Uberlândia. Seja você. Seja livre.">
+  <meta property="og:url" content="https://rainbowpub.cjc.pics/sobre/">
+  <meta property="og:image" content="https://rainbowpub.cjc.pics/img/og.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&family=Yellowtail&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/site.css">
+  <link rel="stylesheet" href="../css/sobre.css">
+</head>
+<body class="pg-sobre">
+  <nav class="topo-sobre" aria-label="Navegação">
+    <a class="voltar" href="../">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+      Cardápio
+    </a>
+    <a class="botao topo-sobre__pedir" href="../#cardapio">Fazer pedido</a>
+  </nav>
+
+  <header class="letreiro letreiro--sobre" id="topo">
+    <div class="parede" aria-hidden="true"></div>
+    <p class="marca" aria-hidden="true">
+      <span class="marca__linha">
+        <span class="marca__letra">R</span>
+        <svg class="arco" id="arco" viewBox="0 0 100 112" role="presentation"></svg>
+        <span class="marca__letra">INBOW</span>
+      </span>
+      <span class="marca__pub">Pub</span>
+    </p>
+    <h1 class="chamada" id="chamada">Somos todas as cores.</h1>
+    <p class="intro" id="texto"></p>
+  </header>
+
+  <main class="sobre">
+    <section class="bloco-sobre" aria-labelledby="tValores">
+      <h2 class="sub" id="tValores">O que a gente é</h2>
+      <div class="valores" id="valores"></div>
+    </section>
+
+    <section class="bloco-sobre" id="secProg" aria-labelledby="tProg" hidden>
+      <h2 class="sub" id="tProg">No Rainbow tem</h2>
+      <div class="programa" id="programa"></div>
+    </section>
+
+    <section class="bloco-sobre" id="secFotos" aria-labelledby="tFotos" hidden>
+      <h2 class="sub" id="tFotos">Uma noite no Rainbow</h2>
+      <div class="galeria" id="galeria"></div>
+    </section>
+
+    <section class="bloco-sobre" aria-labelledby="tVem">
+      <h2 class="sub" id="tVem">Vem pro Rainbow</h2>
+      <div class="vem">
+        <div class="vem__info">
+          <p class="situacao" id="situacao"><span class="situacao__ponto" aria-hidden="true"></span><span id="situacaoTexto">Rua Professor Pedro Bernardo, 20</span></p>
+          <ul class="horas" id="horarios"></ul>
+          <p class="endereco" id="endereco">Rua Professor Pedro Bernardo, 20 · Centro · Uberlândia-MG</p>
+          <div class="vem__botoes">
+            <a class="botao" id="mapa" href="#" target="_blank" rel="noopener">Abrir no mapa</a>
+            <a class="botao botao--contorno" id="insta" href="https://www.instagram.com/rainbowpubudi/" target="_blank" rel="noopener">Instagram</a>
+          </div>
+          <p class="maior" id="maioridade"></p>
+        </div>
+        <iframe class="vem__mapa" title="Mapa do Rainbow Pub" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+          src="https://maps.google.com/maps?q=Rua%20Professor%20Pedro%20Bernardo%2C%2020%20-%20Centro%2C%20Uberl%C3%A2ndia%20-%20MG&z=17&output=embed"></iframe>
+      </div>
+    </section>
+
+    <a class="botao botao--grande botao--largo chamar" href="../#cardapio">Ver o cardápio e pedir</a>
+    <p class="despedida">Vem pro Rainbow, vem ser feliz!</p>
+  </main>
+
+  <div class="foto-aberta" id="fotoAberta" hidden>
+    <button class="folha__fechar" id="fotoFechar" type="button" aria-label="Fechar foto">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+    <img id="fotoImg" alt="">
+    <p id="fotoLegenda"></p>
+  </div>
+
+  <script type="module" src="../js/sobre.js"></script>
+  <script src="https://footer.davicjc.com/projetos/footer-davi/footer_davicjc.js"></script>
+</body>
+</html>
