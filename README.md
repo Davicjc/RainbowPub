@@ -16,7 +16,7 @@ Site do **Rainbow Pub** (Rua Professor Pedro Bernardo, 20 · Centro · Uberlând
 - Cardápio, textos e fotos: leitura pública, escrita só da equipe. Pedidos: qualquer um cria (com GPS dentro do raio e formato fechado); só a equipe lista e altera.
 
 ## Técnica
-HTML, CSS e JavaScript puros (ES modules), sem build. Firebase Auth + Firestore (projeto `rainbowpub-ecd71`, São Paulo), fotos em base64 no Firestore. Hospedagem no Cloudflare Pages (push na `main` publica).
+HTML, CSS e JavaScript puros (ES modules), sem build. Firebase Auth + Firestore (projeto `rainbowpub-ecd71`, São Paulo), fotos em base64 no Firestore. Hospedagem no Cloudflare Pages (push na `main` publica). O build do Pages roda `node tools/carimbo.mjs`, que põe `?v=<commit>` em todo CSS/JS e nos imports: a zona cjc.pics guarda CSS/JS por 4 h no navegador, e sem o carimbo o celular misturava HTML novo com CSS/JS velho depois de publicar.
 
 - `index.html`, `css/site.css`, `js/cardapio.js` — cardápio público
 - `adm/` — painel da equipe
