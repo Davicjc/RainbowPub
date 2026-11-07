@@ -144,7 +144,15 @@
           </div>
 
           <div class="acoes-topo-pedidos">
-            <button type="button" id="btn-silenciar" class="btn btn-secundario" aria-pressed="false">
+            <button type="button" id="btn-config-notificacao" class="btn btn-secundario" title="Configurar tipo de notificação e som">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+              <span id="texto-btn-notificacao">Notificações</span>
+            </button>
+
+            <button type="button" id="btn-silenciar" class="btn btn-secundario" aria-pressed="false" title="Silenciar ou ativar som rapidamente">
               <svg id="icone-som-ativo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
                 <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
@@ -659,6 +667,88 @@
         <span>Relatórios</span>
       </button>
     </nav>
+  </div>
+
+  <!-- Modal: Configuração de Notificações -->
+  <div id="modal-notificacao" class="sobreposicao-modal nao-imprimir" hidden role="dialog" aria-modal="true" aria-labelledby="modal-notif-titulo">
+    <div class="caixa-modal caixa-modal--notif">
+      <div class="topo-modal-notif">
+        <h2 id="modal-notif-titulo" class="titulo-modal">Tipo de notificação</h2>
+        <p class="mensagem-modal">Escolha como a equipe no balcão deve ser avisada quando um novo pedido chegar.</p>
+      </div>
+
+      <div class="secao-modal-notif">
+        <span class="rotulo-secao-notif">Modo de alerta</span>
+        <div class="grade-opcoes-notif" role="radiogroup" aria-label="Modo de notificação">
+          <label class="opcao-radio-card" data-modo="todos">
+            <input type="radio" name="modo-notificacao" value="todos" checked>
+            <div class="conteudo-radio-card">
+              <strong>🔔 Som + Notificação na tela</strong>
+              <small>Toca o toque sonoro e exibe o balão do sistema (mesmo em outra aba).</small>
+            </div>
+          </label>
+          <label class="opcao-radio-card" data-modo="som">
+            <input type="radio" name="modo-notificacao" value="som">
+            <div class="conteudo-radio-card">
+              <strong>🔊 Apenas Som</strong>
+              <small>Alerta sonoro alto nos alto-falantes do bar.</small>
+            </div>
+          </label>
+          <label class="opcao-radio-card" data-modo="tela">
+            <input type="radio" name="modo-notificacao" value="tela">
+            <div class="conteudo-radio-card">
+              <strong>🖥️ Apenas Tela</strong>
+              <small>Balão do navegador sem reproduzir som.</small>
+            </div>
+          </label>
+          <label class="opcao-radio-card" data-modo="mudo">
+            <input type="radio" name="modo-notificacao" value="mudo">
+            <div class="conteudo-radio-card">
+              <strong>🔕 Silencioso</strong>
+              <small>Não toca som nem abre notificações (apenas na lista).</small>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="secao-modal-notif" id="secao-tipo-som">
+        <label for="sel-tipo-som" class="rotulo-secao-notif">Toque sonoro do alerta</label>
+        <div class="linha-seletor-som">
+          <div class="campo" style="flex: 1;">
+            <select id="sel-tipo-som">
+              <option value="campainha">🛎️ Campainha de Balcão (Sino cristalino)</option>
+              <option value="dingdong">🔔 Ding-Dong (Dois tons harmônicos)</option>
+              <option value="beep">⚡ Beep Duplo (Digital rápido)</option>
+              <option value="marimba">🎶 Marimba Bar (3 notas alegres)</option>
+              <option value="alerta">🚨 Alerta Intenso (Para som alto no bar)</option>
+            </select>
+          </div>
+          <button type="button" id="btn-ouvir-som" class="btn btn-secundario" title="Ouvir toque selecionado">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16" aria-hidden="true">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            <span>Ouvir</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="secao-modal-notif" id="secao-status-permissao">
+        <span class="rotulo-secao-notif">Avisos na área de trabalho</span>
+        <div class="bloco-status-permissao">
+          <div id="status-permissao-texto" class="status-permissao-texto"></div>
+          <button type="button" id="btn-pedir-permissao" class="btn btn-secundario" style="align-self: flex-start; margin-top: 4px;" hidden>
+            Ativar notificações no navegador
+          </button>
+        </div>
+      </div>
+
+      <div class="acoes-modal-notif">
+        <button type="button" id="btn-testar-alerta-completo" class="btn btn-secundario">
+          Testar alerta agora
+        </button>
+        <button type="button" id="btn-fechar-modal-notif" class="btn btn-principal">Concluir</button>
+      </div>
+    </div>
   </div>
 
   <!-- Diálogo de Confirmação Próprio -->

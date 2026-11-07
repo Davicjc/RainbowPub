@@ -60,6 +60,10 @@ const estado = {
   telaAtiva: 'pedidos',
   abaStatusPedidos: 'novo',
   somSilenciado: localStorage.getItem('rainbow_adm_mudo') === '1',
+  tipoSom: localStorage.getItem('rainbow_adm_tipo_som') || 'campainha',
+  modoNotificacao: localStorage.getItem('rainbow_adm_modo_notif') || 'todos',
+  idsPedidosConhecidos: new Set(),
+  audioDesbloqueado: false,
   primeiraCargaPedidos: true,
   loja: structuredClone(LOJA_INICIAL),
   sobre: structuredClone(SOBRE_INICIAL),
@@ -139,12 +143,13 @@ modalConfirmacao.addEventListener('click', (e) => {
   if (e.target === modalConfirmacao) fecharModalConfirmacao(false);
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && !modalConfirmacao.hidden) {
-    fecharModalConfirmacao(false);
+  if (e.key === 'Escape') {
+    if (!modalConfirmacao.hidden) fecharModalConfirmacao(false);
+    if (modalNotificacao && !modalNotificacao.hidden) fecharModalNotificacoes();
   }
 });
 
-// ─── WebAudio: Alerta de 2 notas sem arquivo externo ───
+// ─── WebAudio & Notificações de Novos Pedidos ───
 let contextoAudio = null;
 
 function obterContextoAudio() {
@@ -157,38 +162,231 @@ function obterContextoAudio() {
   return contextoAudio;
 }
 
-function tocarAlertaNovoPedido() {
-  if (navigator.vibrate) {
-    try {
-      navigator.vibrate(200);
-    } catch {}
-  }
-  if (estado.somSilenciado) return;
+// Desbloqueia o contexto de áudio em qualquer interação do usuário
+function desbloquearAudioContexto() {
+  try {
+    const ctx = obterContextoAudio();
+    if (ctx && ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+  } catch {}
+}
+['click', 'touchstart', 'keydown', 'pointerdown'].forEach((evt) => {
+  window.addEventListener(evt, desbloquearAudioContexto, { passive: true });
+});
 
+// Síntese de toques sonoros
+function sintetizarCampainha(ctx, agora) {
+  // Campainha de balcão (desk service bell) - tom cristalino metálico
+  const osc1 = ctx.createOscillator();
+  const ganho1 = ctx.createGain();
+  osc1.type = 'sine';
+  osc1.frequency.setValueAtTime(1760, agora); // A6
+  ganho1.gain.setValueAtTime(0.0001, agora);
+  ganho1.gain.exponentialRampToValueAtTime(0.35, agora + 0.005);
+  ganho1.gain.exponentialRampToValueAtTime(0.0001, agora + 1.2);
+  osc1.connect(ganho1);
+  ganho1.connect(ctx.destination);
+  osc1.start(agora);
+  osc1.stop(agora + 1.25);
+
+  const osc2 = ctx.createOscillator();
+  const ganho2 = ctx.createGain();
+  osc2.type = 'triangle';
+  osc2.frequency.setValueAtTime(3520, agora); // A7
+  ganho2.gain.setValueAtTime(0.0001, agora);
+  ganho2.gain.exponentialRampToValueAtTime(0.14, agora + 0.003);
+  ganho2.gain.exponentialRampToValueAtTime(0.0001, agora + 0.5);
+  osc2.connect(ganho2);
+  ganho2.connect(ctx.destination);
+  osc2.start(agora);
+  osc2.stop(agora + 0.55);
+}
+
+function sintetizarDingDong(ctx, agora) {
+  // Ding: D5 (587.33 Hz)
+  const osc1 = ctx.createOscillator();
+  const ganho1 = ctx.createGain();
+  osc1.type = 'sine';
+  osc1.frequency.setValueAtTime(587.33, agora);
+  ganho1.gain.setValueAtTime(0.0001, agora);
+  ganho1.gain.exponentialRampToValueAtTime(0.32, agora + 0.01);
+  ganho1.gain.exponentialRampToValueAtTime(0.0001, agora + 0.45);
+  osc1.connect(ganho1);
+  ganho1.connect(ctx.destination);
+  osc1.start(agora);
+  osc1.stop(agora + 0.5);
+
+  // Dong: A4 (440 Hz)
+  const inicioDong = agora + 0.28;
+  const osc2 = ctx.createOscillator();
+  const ganho2 = ctx.createGain();
+  osc2.type = 'sine';
+  osc2.frequency.setValueAtTime(440, inicioDong);
+  ganho2.gain.setValueAtTime(0.0001, inicioDong);
+  ganho2.gain.exponentialRampToValueAtTime(0.38, inicioDong + 0.015);
+  ganho2.gain.exponentialRampToValueAtTime(0.0001, inicioDong + 0.8);
+  osc2.connect(ganho2);
+  ganho2.connect(ctx.destination);
+  osc2.start(inicioDong);
+  osc2.stop(inicioDong + 0.85);
+}
+
+function sintetizarBeepDuplo(ctx, agora) {
+  const tocarPulso = (freq, inicio, duracao) => {
+    const osc = ctx.createOscillator();
+    const ganho = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, inicio);
+    ganho.gain.setValueAtTime(0.0001, inicio);
+    ganho.gain.exponentialRampToValueAtTime(0.28, inicio + 0.01);
+    ganho.gain.exponentialRampToValueAtTime(0.0001, inicio + duracao);
+    osc.connect(ganho);
+    ganho.connect(ctx.destination);
+    osc.start(inicio);
+    osc.stop(inicio + duracao + 0.01);
+  };
+  tocarPulso(880.0, agora, 0.09); // A5
+  tocarPulso(1318.5, agora + 0.12, 0.14); // E6
+}
+
+function sintetizarMarimba(ctx, agora) {
+  const tocarNota = (freq, inicio, duracao) => {
+    const osc = ctx.createOscillator();
+    const ganho = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, inicio);
+    ganho.gain.setValueAtTime(0.0001, inicio);
+    ganho.gain.exponentialRampToValueAtTime(0.30, inicio + 0.005);
+    ganho.gain.exponentialRampToValueAtTime(0.0001, inicio + duracao);
+    osc.connect(ganho);
+    ganho.connect(ctx.destination);
+    osc.start(inicio);
+    osc.stop(inicio + duracao + 0.01);
+  };
+  tocarNota(523.25, agora, 0.22); // C5
+  tocarNota(659.25, agora + 0.10, 0.22); // E5
+  tocarNota(783.99, agora + 0.20, 0.45); // G5
+}
+
+function sintetizarAlertaIntenso(ctx, agora) {
+  const tocarBeep = (freq, inicio, duracao) => {
+    const osc = ctx.createOscillator();
+    const ganho = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(freq, inicio);
+    ganho.gain.setValueAtTime(0.0001, inicio);
+    ganho.gain.exponentialRampToValueAtTime(0.24, inicio + 0.01);
+    ganho.gain.exponentialRampToValueAtTime(0.0001, inicio + duracao);
+    osc.connect(ganho);
+    ganho.connect(ctx.destination);
+    osc.start(inicio);
+    osc.stop(inicio + duracao + 0.01);
+  };
+  tocarBeep(987.77, agora, 0.10); // B5
+  tocarBeep(1318.51, agora + 0.12, 0.10); // E6
+  tocarBeep(987.77, agora + 0.26, 0.10); // B5
+  tocarBeep(1318.51, agora + 0.38, 0.22); // E6
+}
+
+async function tocarSom(tipo = estado.tipoSom) {
+  if (estado.somSilenciado || estado.modoNotificacao === 'tela' || estado.modoNotificacao === 'mudo') {
+    return;
+  }
   try {
     const ctx = obterContextoAudio();
     if (!ctx) return;
+    if (ctx.state === 'suspended') {
+      await ctx.resume().catch(() => {});
+    }
     const agora = ctx.currentTime;
+    switch (tipo) {
+      case 'dingdong':
+        sintetizarDingDong(ctx, agora);
+        break;
+      case 'beep':
+        sintetizarBeepDuplo(ctx, agora);
+        break;
+      case 'marimba':
+        sintetizarMarimba(ctx, agora);
+        break;
+      case 'alerta':
+        sintetizarAlertaIntenso(ctx, agora);
+        break;
+      case 'campainha':
+      default:
+        sintetizarCampainha(ctx, agora);
+        break;
+    }
+  } catch (err) {
+    console.warn('Erro ao reproduzir alerta sonoro:', err);
+  }
+}
 
-    const tocarNota = (freq, inicio, duracao) => {
-      const osc = ctx.createOscillator();
-      const ganho = ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(freq, inicio);
+// Disparo unificado do alerta de novo pedido
+function dispararAlertaNovoPedido(pedido = {}) {
+  // 1. Vibração em dispositivos móveis
+  if (navigator.vibrate) {
+    try {
+      navigator.vibrate([180, 80, 180]);
+    } catch {}
+  }
 
-      ganho.gain.setValueAtTime(0.001, inicio);
-      ganho.gain.exponentialRampToValueAtTime(0.22, inicio + 0.02);
-      ganho.gain.exponentialRampToValueAtTime(0.001, inicio + duracao);
+  // 2. Alerta sonoro
+  tocarSom(estado.tipoSom);
 
-      osc.connect(ganho);
-      ganho.connect(ctx.destination);
-      osc.start(inicio);
-      osc.stop(inicio + duracao + 0.01);
-    };
+  // 3. Notificação nativa do navegador (Desktop / Mobile)
+  const querTela = estado.modoNotificacao === 'todos' || estado.modoNotificacao === 'tela';
+  if (querTela && 'Notification' in window && Notification.permission === 'granted') {
+    try {
+      const cod = pedido.id ? codigo(pedido.id) : 'Novo';
+      const nome = pedido.nome || 'Cliente';
+      const local = pedido.local || 'Mesa';
+      const totalTxt = pedido.total ? ` · ${brl(pedido.total)}` : '';
+      const notif = new Notification(`Rainbow Pub · Pedido Nº ${cod}`, {
+        body: `${nome} (${local})${totalTxt}\nClique para ver no painel`,
+        icon: '../img/og.png',
+        tag: `pedido-${pedido.id || Date.now()}`,
+      });
+      notif.onclick = () => {
+        window.focus();
+        notif.close();
+      };
+    } catch (err) {
+      console.warn('Erro ao disparar notificação nativa:', err);
+    }
+  }
+}
 
-    tocarNota(587.33, agora, 0.12); // D5
-    tocarNota(880.0, agora + 0.14, 0.18); // A5
-  } catch {}
+function tocarAlertaNovoPedido() {
+  dispararAlertaNovoPedido();
+}
+
+// ─── Modal de Notificações e Botão de Som ───
+const NOMES_SOM = {
+  campainha: 'Campainha',
+  dingdong: 'Ding-Dong',
+  beep: 'Beep',
+  marimba: 'Marimba',
+  alerta: 'Alerta',
+};
+
+const modalNotificacao = document.getElementById('modal-notificacao');
+const btnConfigNotificacao = document.getElementById('btn-config-notificacao');
+const btnFecharModalNotif = document.getElementById('btn-fechar-modal-notif');
+const selTipoSom = document.getElementById('sel-tipo-som');
+const btnOuvirSom = document.getElementById('btn-ouvir-som');
+const btnPedirPermissao = document.getElementById('btn-pedir-permissao');
+const statusPermissaoTexto = document.getElementById('status-permissao-texto');
+const btnTestarAlertaCompleto = document.getElementById('btn-testar-alerta-completo');
+const radiosModoNotif = document.querySelectorAll('input[name="modo-notificacao"]');
+
+function atualizarBotaoNotificacao() {
+  const rotulo = document.getElementById('texto-btn-notificacao');
+  if (rotulo) {
+    const nome = NOMES_SOM[estado.tipoSom] || 'Campainha';
+    rotulo.textContent = `Notificações (${nome})`;
+  }
 }
 
 function atualizarBotaoSom() {
@@ -199,23 +397,158 @@ function atualizarBotaoSom() {
   if (!btn) return;
 
   btn.setAttribute('aria-pressed', estado.somSilenciado ? 'true' : 'false');
-  iconeAtivo.hidden = estado.somSilenciado;
-  iconeMudo.hidden = !estado.somSilenciado;
-  texto.textContent = estado.somSilenciado ? 'Silenciado' : 'Som ativo';
+  if (iconeAtivo) iconeAtivo.hidden = estado.somSilenciado;
+  if (iconeMudo) iconeMudo.hidden = !estado.somSilenciado;
+  if (texto) texto.textContent = estado.somSilenciado ? 'Silenciado' : 'Som ativo';
 }
 
-document.getElementById('btn-silenciar').addEventListener('click', () => {
-  estado.somSilenciado = !estado.somSilenciado;
-  localStorage.setItem('rainbow_adm_mudo', estado.somSilenciado ? '1' : '0');
-  atualizarBotaoSom();
-  if (!estado.somSilenciado) {
-    obterContextoAudio();
-    mostrarToast('Alerta sonoro ativado.', 'sucesso');
-  } else {
-    mostrarToast('Alerta sonoro silenciado.');
+function atualizarStatusPermissaoNotificacao() {
+  if (!statusPermissaoTexto) return;
+  if (!('Notification' in window)) {
+    statusPermissaoTexto.innerHTML = '<strong>Aviso:</strong> Este navegador não suporta notificações de área de trabalho.';
+    if (btnPedirPermissao) btnPedirPermissao.hidden = true;
+    return;
   }
+  const perm = Notification.permission;
+  if (perm === 'granted') {
+    statusPermissaoTexto.innerHTML = '<span class="status-permissao-badge status-permissao-badge--ok">✓ Notificações do navegador ativadas</span><small style="display:block; margin-top:2px; color:var(--texto-2);">Você receberá avisos na tela mesmo com o navegador em segundo plano ou em outra aba.</small>';
+    if (btnPedirPermissao) btnPedirPermissao.hidden = true;
+  } else if (perm === 'denied') {
+    statusPermissaoTexto.innerHTML = '<span class="status-permissao-badge status-permissao-badge--bloqueado">✕ Notificações bloqueadas pelo navegador</span><small style="display:block; margin-top:2px; color:var(--texto-2);">Clique no ícone de cadeado ou configurações do site no navegador e permita as Notificações.</small>';
+    if (btnPedirPermissao) btnPedirPermissao.hidden = true;
+  } else {
+    statusPermissaoTexto.innerHTML = '<span class="status-permissao-badge status-permissao-badge--aviso">! Notificações em segundo plano não ativadas</span><small style="display:block; margin-top:2px; color:var(--texto-2);">Ative para receber avisos visuais de pedidos mesmo fora do painel.</small>';
+    if (btnPedirPermissao) btnPedirPermissao.hidden = false;
+  }
+}
+
+function abrirModalNotificacoes() {
+  if (!modalNotificacao) return;
+  desbloquearAudioContexto();
+
+  if (selTipoSom) {
+    selTipoSom.value = estado.tipoSom;
+  }
+  radiosModoNotif.forEach((r) => {
+    r.checked = r.value === estado.modoNotificacao;
+    const card = r.closest('.opcao-radio-card');
+    if (card) card.classList.toggle('ativa', r.checked);
+  });
+  atualizarStatusPermissaoNotificacao();
+  modalNotificacao.hidden = false;
+}
+
+function fecharModalNotificacoes() {
+  if (modalNotificacao) modalNotificacao.hidden = true;
+}
+
+if (btnConfigNotificacao) {
+  btnConfigNotificacao.addEventListener('click', abrirModalNotificacoes);
+}
+if (btnFecharModalNotif) {
+  btnFecharModalNotif.addEventListener('click', fecharModalNotificacoes);
+}
+if (modalNotificacao) {
+  modalNotificacao.addEventListener('click', (e) => {
+    if (e.target === modalNotificacao) fecharModalNotificacoes();
+  });
+}
+
+radiosModoNotif.forEach((r) => {
+  r.addEventListener('change', () => {
+    if (r.checked) {
+      estado.modoNotificacao = r.value;
+      localStorage.setItem('rainbow_adm_modo_notif', estado.modoNotificacao);
+      if (estado.modoNotificacao === 'mudo') {
+        estado.somSilenciado = true;
+      } else if (estado.modoNotificacao === 'som' || estado.modoNotificacao === 'todos') {
+        estado.somSilenciado = false;
+      }
+      localStorage.setItem('rainbow_adm_mudo', estado.somSilenciado ? '1' : '0');
+      atualizarBotaoSom();
+      radiosModoNotif.forEach((el) => {
+        const card = el.closest('.opcao-radio-card');
+        if (card) card.classList.toggle('ativa', el.checked);
+      });
+    }
+  });
 });
+
+if (selTipoSom) {
+  selTipoSom.addEventListener('change', () => {
+    estado.tipoSom = selTipoSom.value;
+    localStorage.setItem('rainbow_adm_tipo_som', estado.tipoSom);
+    atualizarBotaoNotificacao();
+    tocarSom(estado.tipoSom);
+  });
+}
+
+if (btnOuvirSom) {
+  btnOuvirSom.addEventListener('click', () => {
+    const tipo = selTipoSom ? selTipoSom.value : estado.tipoSom;
+    tocarSom(tipo);
+  });
+}
+
+if (btnPedirPermissao) {
+  btnPedirPermissao.addEventListener('click', async () => {
+    if (!('Notification' in window)) {
+      mostrarToast('Navegador não suporta notificações nativas.', 'erro');
+      return;
+    }
+    try {
+      const resp = await Notification.requestPermission();
+      atualizarStatusPermissaoNotificacao();
+      if (resp === 'granted') {
+        mostrarToast('Notificações no navegador ativadas!', 'sucesso');
+        tocarSom(estado.tipoSom);
+      } else {
+        mostrarToast('Permissão não concedida pelo navegador.', 'erro');
+      }
+    } catch {
+      mostrarToast('Não foi possível ativar permissão.', 'erro');
+    }
+  });
+}
+
+if (btnTestarAlertaCompleto) {
+  btnTestarAlertaCompleto.addEventListener('click', () => {
+    dispararAlertaNovoPedido({
+      id: 'teste999',
+      nome: 'Mesa de Teste',
+      local: 'Mesa 1',
+      total: 42.0,
+    });
+    mostrarToast('Alerta de teste disparado!', 'sucesso');
+  });
+}
+
+const btnSilenciar = document.getElementById('btn-silenciar');
+if (btnSilenciar) {
+  btnSilenciar.addEventListener('click', () => {
+    estado.somSilenciado = !estado.somSilenciado;
+    localStorage.setItem('rainbow_adm_mudo', estado.somSilenciado ? '1' : '0');
+    if (!estado.somSilenciado) {
+      if (estado.modoNotificacao === 'mudo') {
+        estado.modoNotificacao = 'todos';
+        localStorage.setItem('rainbow_adm_modo_notif', 'todos');
+        radiosModoNotif.forEach((r) => {
+          r.checked = r.value === 'todos';
+          const card = r.closest('.opcao-radio-card');
+          if (card) card.classList.toggle('ativa', r.checked);
+        });
+      }
+      obterContextoAudio();
+      tocarSom(estado.tipoSom);
+      mostrarToast('Alerta sonoro ativado.', 'sucesso');
+    } else {
+      mostrarToast('Alerta sonoro silenciado.');
+    }
+    atualizarBotaoSom();
+  });
+}
 atualizarBotaoSom();
+atualizarBotaoNotificacao();
 
 // ─── Formatação de Data e Tempo ───
 function extrairData(ts) {
@@ -397,6 +730,7 @@ function encerrarEscutasFirestore() {
     } catch {}
   }
   estado.primeiraCargaPedidos = true;
+  estado.idsPedidosConhecidos.clear();
 }
 
 function iniciarEscutasFirestore() {
@@ -518,21 +852,40 @@ function iniciarEscutasFirestore() {
     qPedidos,
     (snap) => {
       if (!estado.primeiraCargaPedidos) {
-        let chegouNovo = false;
-        let codUltimoNovo = '';
+        const novos = [];
         for (const change of snap.docChanges()) {
           if (change.type === 'added') {
             const d = change.doc.data();
-            if (d && d.status === 'novo') {
-              chegouNovo = true;
-              codUltimoNovo = codigo(change.doc.id);
+            if (d && d.status === 'novo' && !estado.idsPedidosConhecidos.has(change.doc.id)) {
+              novos.push({ id: change.doc.id, ...d });
             }
           }
         }
-        if (chegouNovo) {
-          tocarAlertaNovoPedido();
-          mostrarToast(`Novo pedido recebido: Nº ${codUltimoNovo}`, 'sucesso');
+        // Fallback defensivo: se docChanges não listou por reconexão ou cache local
+        if (novos.length === 0) {
+          for (const d of snap.docs) {
+            if (!estado.idsPedidosConhecidos.has(d.id)) {
+              const dados = d.data();
+              if (dados && dados.status === 'novo') {
+                novos.push({ id: d.id, ...dados });
+              }
+            }
+          }
         }
+
+        if (novos.length > 0) {
+          const ultimo = novos[novos.length - 1];
+          dispararAlertaNovoPedido(ultimo);
+          const cod = codigo(ultimo.id);
+          const msg = novos.length > 1
+            ? `${novos.length} novos pedidos recebidos!`
+            : `Novo pedido recebido: Nº ${cod} (${ultimo.nome || 'Cliente'} · ${ultimo.local || 'Mesa'})`;
+          mostrarToast(msg, 'sucesso');
+        }
+      }
+
+      for (const d of snap.docs) {
+        estado.idsPedidosConhecidos.add(d.id);
       }
       estado.primeiraCargaPedidos = false;
 
@@ -541,7 +894,8 @@ function iniciarEscutasFirestore() {
       estado.pedidosAoVivo = lista;
       renderizarPedidosAoVivo();
     },
-    () => {
+    (erro) => {
+      console.error('Erro ao acompanhar pedidos:', erro);
       mostrarToast('Erro ao acompanhar pedidos em tempo real.', 'erro');
     }
   );
