@@ -919,9 +919,9 @@ svg {
 }
 
 .selo-apagar {
-  background-color: #302312;
-  border-color: #593e18;
-  color: #fbbf24;
+  background-color: #36191b;
+  border-color: #5c2326;
+  color: #ff8b8e;
 }
 
 .selo-status-cancelado {
@@ -947,6 +947,65 @@ svg {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
+}
+
+.acoes-secundarias-pedido:has(> :only-child) {
+  grid-template-columns: 1fr;
+}
+
+/* ─── Botão de Status de Pagamento (Vermelho se Não Pago, Verde se Pago) ─── */
+.btn-status-pago {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.btn-status-pago svg {
+  flex-shrink: 0;
+}
+
+/* Estado: NÃO PAGO (Vermelho bem visível) */
+.btn-status-pago--nao-pago {
+  background-color: #e5484d;
+  border-color: #f2666a;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(229, 72, 77, 0.35);
+}
+
+.btn-status-pago--nao-pago:hover:not(:disabled) {
+  background-color: #dc3b40;
+  border-color: #ff8b8e;
+  color: #ffffff;
+  box-shadow: 0 3px 12px rgba(229, 72, 77, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-status-pago--nao-pago:active:not(:disabled) {
+  background-color: #c03035;
+  transform: translateY(0);
+}
+
+/* Estado: PAGO (Verde bem visível) */
+.btn-status-pago--pago {
+  background-color: #22c55e;
+  border-color: #4ade80;
+  color: #052e16;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.35);
+}
+
+.btn-status-pago--pago:hover:not(:disabled) {
+  background-color: #16a34a;
+  border-color: #86efac;
+  color: #ffffff;
+  box-shadow: 0 3px 12px rgba(34, 197, 94, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-status-pago--pago:active:not(:disabled) {
+  background-color: #15803d;
+  color: #ffffff;
+  transform: translateY(0);
 }
 
 /* ─── 2. Tela de Cardápio ─── */

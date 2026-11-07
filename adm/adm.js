@@ -1010,7 +1010,7 @@ function montarHtmlCartaoPedido(p) {
   // Selo de pagamento e status finalizado
   const seloPagoHtml = p.pago
     ? `<span class="selo selo-pago">Pago</span>`
-    : `<span class="selo selo-apagar">A pagar</span>`;
+    : `<span class="selo selo-apagar">Não pago</span>`;
 
   let seloStatusExtra = '';
   if (p.status === 'cancelado') {
@@ -1029,7 +1029,12 @@ function montarHtmlCartaoPedido(p) {
     btnAvancarHtml = `<button type="button" class="btn btn-principal btn-bloco" data-acao-pedido="avancar" data-id="${esc(p.id)}" data-proximo="entregue">Marcar entregue</button>`;
   }
 
-  const btnPagoHtml = `<button type="button" class="btn btn-secundario btn-compacto" data-acao-pedido="pago" data-id="${esc(p.id)}">${p.pago ? 'Marcar a pagar' : 'Marcar pago'}</button>`;
+  const btnPagoHtml = `<button type="button" class="btn btn-compacto btn-status-pago ${p.pago ? 'btn-status-pago--pago' : 'btn-status-pago--nao-pago'}" data-acao-pedido="pago" data-id="${esc(p.id)}" title="${p.pago ? 'Pedido pago. Clique para marcar como não pago.' : 'Pedido não pago. Clique para marcar como pago.'}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true">
+      ${p.pago ? '<polyline points="20 6 9 17 4 12"/>' : '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'}
+    </svg>
+    <span>${p.pago ? 'Pago' : 'Não pago'}</span>
+  </button>`;
   const btnCancelarHtml =
     p.status !== 'cancelado'
       ? `<button type="button" class="btn btn-perigo btn-compacto" data-acao-pedido="cancelar" data-id="${esc(p.id)}">Cancelar</button>`
@@ -1148,7 +1153,7 @@ gradeColunasPedidos.addEventListener('click', async (e) => {
     } else if (acao === 'pago') {
       const novoPago = !pedido.pago;
       await updateDoc(doc(db, 'pedidos', id), { pago: novoPago });
-      mostrarToast(`Pedido Nº ${codigo(id)} marcado como ${novoPago ? 'Pago' : 'A pagar'}.`);
+      mostrarToast(`Pedido Nº ${codigo(id)} marcado como ${novoPago ? 'Pago' : 'Não pago'}.`, novoPago ? 'sucesso' : 'info');
     } else if (acao === 'cancelar') {
       const ok = await confirmarAcao({
         titulo: `Cancelar pedido Nº ${codigo(id)}`,
