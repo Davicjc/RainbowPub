@@ -1048,9 +1048,20 @@ function montarHtmlCartaoPedido(p) {
   return `<article class="cartao-pedido" data-status="${esc(p.status)}">
     <div class="topo-cartao-pedido">
       <strong class="codigo-pedido">Nº ${esc(cod)}</strong>
-      <div class="tempo-pedido">
-        <span>${esc(horaStr)}</span>
-        <span data-tempo-ts="${esc(dataCriado.getTime())}">${esc(haQuantoStr)}</span>
+      <div class="topo-cartao-pedido__dir">
+        <div class="tempo-pedido">
+          <span>${esc(horaStr)}</span>
+          <span data-tempo-ts="${esc(dataCriado.getTime())}">${esc(haQuantoStr)}</span>
+        </div>
+        <button type="button" class="btn-apagar-pedido" data-acao-pedido="apagar" data-id="${esc(p.id)}" title="Apagar pedido de vez (some também dos relatórios)" aria-label="Apagar pedido Nº ${esc(cod)}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 6h18"/>
+            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            <path d="M10 11v6"/>
+            <path d="M14 11v6"/>
+          </svg>
+        </button>
       </div>
     </div>
     <div class="cliente-pedido">
@@ -1170,6 +1181,18 @@ gradeColunasPedidos.addEventListener('click', async (e) => {
       if (ok) {
         await updateDoc(doc(db, 'pedidos', id), { status: 'cancelado' });
         mostrarToast(`Pedido Nº ${codigo(id)} cancelado.`);
+      }
+    } else if (acao === 'apagar') {
+      const ok = await confirmarAcao({
+        titulo: `Apagar pedido Nº ${codigo(id)}`,
+        mensagem: `O pedido de ${pedido.nome} (${brl(pedido.total)}) some de tudo: painel, faturamento e relatórios. Não dá para desfazer.`,
+        textoConfirmar: 'Sim, apagar de vez',
+        perigo: true,
+      });
+      if (ok) {
+        await deleteDoc(doc(db, 'pedidos', id));
+        estado.balcaoLancados = estado.balcaoLancados.filter((x) => x.id !== id);
+        mostrarToast(`Pedido Nº ${codigo(id)} apagado.`);
       }
     }
   } catch {
