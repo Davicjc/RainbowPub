@@ -70,6 +70,8 @@ export const codigo = (id) => String(id).replace(/[^a-zA-Z0-9]/g, '').slice(0, 4
 export const LOJA_INICIAL = {
   nome: 'Rainbow Pub',
   aceitandoPedidos: true,
+  // Casa cheia/festa: o site vira só cardápio e a equipe lança as vendas no balcão.
+  modoBalcao: false,
   endereco: 'Rua Professor Pedro Bernardo, 20 · Centro · Uberlândia-MG',
   mapsUrl: 'https://maps.google.com/?cid=7690246692483849217',
   instagram: 'rainbowpubudi',

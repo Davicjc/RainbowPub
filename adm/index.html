@@ -132,7 +132,7 @@
       <!-- 1. TELA DE PEDIDOS -->
       <section id="tela-pedidos" class="secao-painel">
         <div class="barra-topo-pedidos">
-          <div class="bloco-interruptor-loja">
+          <div class="bloco-interruptor-loja bloco-recebendo">
             <label class="interruptor-grande" for="chk-recebendo-pedidos">
               <input type="checkbox" id="chk-recebendo-pedidos" checked>
               <span class="trilho-interruptor"></span>
@@ -141,6 +141,36 @@
                 <small id="legenda-recebendo-pedidos">Cardápio aberto para clientes</small>
               </span>
             </label>
+          </div>
+
+          <div class="bloco-interruptor-loja">
+            <label class="interruptor-grande" for="chk-modo-balcao" title="Casa cheia ou festa: o site vira só cardápio e a equipe lança as vendas aqui">
+              <input type="checkbox" id="chk-modo-balcao">
+              <span class="trilho-interruptor trilho-interruptor--balcao"></span>
+              <span class="rotulo-interruptor">
+                <strong>Modo balcão</strong>
+                <small id="legenda-modo-balcao">Desligado · pedidos pelo celular</small>
+              </span>
+            </label>
+          </div>
+
+          <!-- Resumo do modo balcão: vendas da noite e desfazer a última -->
+          <div class="resumo-balcao" id="resumo-balcao" hidden>
+            <div class="resumo-balcao__noite">
+              <small>Vendas no balcão hoje</small>
+              <strong id="balcao-total-noite">0 · R$ 0,00</strong>
+            </div>
+            <div class="resumo-balcao__ultimo" id="balcao-ultimo" hidden>
+              <small>Último lançado</small>
+              <strong id="balcao-ultimo-texto"></strong>
+            </div>
+            <button type="button" id="btn-balcao-desfazer" class="btn btn-secundario" title="Desfazer o último lançado" aria-label="Desfazer o último lançado" hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 7v6h6"/>
+                <path d="M21 17a9 9 0 0 0-15-6.7L3 13"/>
+              </svg>
+              <span>Desfazer</span>
+            </button>
           </div>
 
           <div class="acoes-topo-pedidos">
@@ -238,6 +268,11 @@
             </header>
             <div class="lista-cartoes-pedidos" id="lista-pedidos-finalizados"></div>
           </div>
+        </div>
+
+        <!-- MODO BALCÃO: grade de produtos que cabe inteira na tela; tocar = venda paga e entregue -->
+        <div id="tela-balcao" class="tela-balcao" hidden aria-label="Lançar vendas do balcão">
+          <div id="grade-balcao" class="grade-balcao"></div>
         </div>
       </section>
 

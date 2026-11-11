@@ -62,12 +62,30 @@ async function carregar() {
     estado.online = true;
     aplicar(dados);
     try { localStorage.setItem(CACHE, JSON.stringify(dados)); } catch { /* sem espaço */ }
+    vigiarLoja();
   } catch {
     if (!estado.categorias.length) aplicar({ loja: LOJA_INICIAL, categorias: CATEGORIAS_INICIAIS, itens: ITENS_INICIAIS });
     estado.online = false;
   }
   montar();
 }
+
+// O modo balcão pode ligar no meio da noite: quem já está com o site aberto fica sabendo na hora.
+let vigiando = false;
+function vigiarLoja() {
+  if (vigiando) return;
+  vigiando = true;
+  onSnapshot(doc(db, 'config', 'loja'), (snap) => {
+    if (!snap.exists()) return;
+    const antes = soBalcao();
+    estado.loja = { ...LOJA_INICIAL, ...snap.data() };
+    montarCasa();
+    if (antes !== soBalcao()) montar();
+  }, () => { /* segue com o que já tem */ });
+}
+
+// Modo balcão: o site fica só como cardápio (sem adicionar nem enviar pedido).
+const soBalcao = () => estado.loja.modoBalcao === true;
 
 const itemPorId = (id) => estado.itens.find((i) => i.id === id);
 const catPorId = (id) => estado.categorias.find((c) => c.id === id);
@@ -83,7 +101,33 @@ function montarCasa() {
   $('#endereco').textContent = l.endereco || '';
   $('#aviso').hidden = !l.aviso;
   $('#aviso').textContent = l.aviso || '';
+  const balcao = soBalcao();
+  document.body.classList.toggle('so-cardapio', balcao);
+  $('#escolhaDica').textContent = balcao
+    ? 'Hoje os pedidos são feitos no balcão. Aqui você confere o cardápio e os preços.'
+    : 'Toque numa opção, escolha e mande. A gente leva até você.';
 }
+
+// "Fazer meu pedido" com o modo balcão ligado: avisa e mostra o cardápio.
+function avisoBalcao() {
+  $('#folha').hidden = false;
+  document.body.classList.add('travado');
+  estado.passo = 0;
+  $('#folha').classList.add('folha--aviso');
+  $('#folhaTitulo').textContent = 'Hoje é no balcão';
+  $('#folhaVoltar').hidden = true;
+  $('#folhaCorpo').innerHTML = `<div class="balcao">
+    <p class="balcao__texto">Casa cheia! Hoje os pedidos são feitos <strong>direto no balcão</strong>.</p>
+    <p class="nota">O site está funcionando só como cardápio: dá para ver tudo o que tem e os preços, e aí é só chamar no balcão.</p>
+    <button class="botao botao--grande botao--largo" type="button" id="fCardapio">Ver o cardápio</button>
+  </div>`;
+  $('#fCardapio').addEventListener('click', () => { fecharFolha(); irPara(''); });
+}
+$('#fazerPedido').addEventListener('click', (e) => {
+  if (!soBalcao()) return;
+  e.preventDefault();
+  avisoBalcao();
+});
 
 /* ─────────────── Tela 1: blocos ─────────────── */
 function montarBlocos() {
@@ -122,6 +166,7 @@ function copo(cores = ['#d9a1b5', '#f3d9e2']) {
 
 function acao(item) {
   if (item.esgotado) return '<span class="esgotou">Acabou por hoje</span>';
+  if (soBalcao()) return '<span class="no-balcao">Peça no balcão</span>';
   const n = estado.pedido.get(item.id) || 0;
   if (!n) {
     return `<button class="add" type="button" data-add="${esc(item.id)}" aria-label="Adicionar ${esc(item.nome)}">${ICONE.mais}Adicionar</button>`;
@@ -203,7 +248,7 @@ function totais() {
 
 function mudar(id, delta) {
   const it = itemPorId(id);
-  if (!it || (delta > 0 && it.esgotado)) return;
+  if (!it || (delta > 0 && (it.esgotado || soBalcao()))) return;
   const n = Math.max(0, Math.min(30, (estado.pedido.get(id) || 0) + delta));
   if (n) estado.pedido.set(id, n); else estado.pedido.delete(id);
   atualizarProd(id);
@@ -231,7 +276,7 @@ function atualizarBarra(pular = false) {
   const { qtd, total } = totais();
   const acompanhando = pedidoAberto();
   barra.classList.remove('barra--acompanha');
-  if (qtd) {
+  if (qtd && !soBalcao()) {
     barra.hidden = false;
     $('#barraQtd').textContent = qtd;
     $('#barraTexto').innerHTML = 'Ver meu pedido';
@@ -251,6 +296,8 @@ function atualizarBarra(pular = false) {
 
 /* ─────────────── Folha do pedido ─────────────── */
 function abrirFolha() {
+  if (soBalcao() && !pedidoAberto()) return avisoBalcao();
+  $('#folha').classList.remove('folha--aviso');
   $('#folha').hidden = false;
   document.body.classList.add('travado');
   const { qtd } = totais();
@@ -271,6 +318,7 @@ $('#folhaVoltar').addEventListener('click', () => passoRevisar());
 
 function cabecalho(passo, titulo) {
   estado.passo = passo;
+  $('#folha').classList.remove('folha--aviso');
   $('#folhaTitulo').textContent = titulo;
   $('#folhaVoltar').hidden = passo !== 2;
   document.querySelectorAll('#passos li').forEach((li, i) => li.classList.toggle('feito', i < passo));
@@ -319,7 +367,7 @@ function passoDados(recado = '') {
   const locais = l.locais?.length ? l.locais : LOJA_INICIAL.locais;
   if (!locais.includes(estado.local)) estado.local = locais[0];
   const pedeNumero = /mesa|sinuca/i.test(estado.local);
-  const pode = estado.online && l.aceitandoPedidos !== false;
+  const pode = estado.online && l.aceitandoPedidos !== false && !soBalcao();
   const { total } = totais();
 
   $('#folhaCorpo').innerHTML = `
@@ -338,7 +386,7 @@ function passoDados(recado = '') {
       ? `<label class="campo"><span class="campo__rotulo">Observação</span><textarea id="fObs" maxlength="240" rows="2">${esc(estado.obs)}</textarea></label>`
       : '<button class="link-obs" type="button" id="fObsAbrir">+ Escrever uma observação</button>'}
     ${l.gps?.ativo ? `<div class="aviso-gps">${ICONE.pino}<span><strong>O celular vai pedir sua localização.</strong> Toque em <strong>Permitir</strong>: é só para confirmar que você está no Rainbow.</span></div>` : ''}
-    ${pode ? '' : `<p class="recado">${!estado.online ? 'Sem internet agora. Peça no balcão.' : 'Os pedidos pelo celular estão pausados. Peça no balcão.'}</p>`}
+    ${pode ? '' : `<p class="recado">${!estado.online ? 'Sem internet agora. Peça no balcão.' : soBalcao() ? 'Hoje os pedidos são feitos só no balcão.' : 'Os pedidos pelo celular estão pausados. Peça no balcão.'}</p>`}
     <button class="botao botao--grande botao--largo" type="button" id="fEnviar" ${pode ? '' : 'disabled'}>Enviar pedido · ${brl(total)}</button>`;
 
   const guardar = () => {
@@ -502,7 +550,7 @@ function montar() {
   montarBlocos();
   for (const id of [...estado.pedido.keys()]) {
     const it = itemPorId(id);
-    if (!it || it.esgotado) estado.pedido.delete(id);
+    if (!it || it.esgotado || soBalcao()) estado.pedido.delete(id);
   }
   rota();
   atualizarBarra();

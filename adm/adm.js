@@ -84,6 +84,7 @@ const estado = {
   descricaoPeriodoRelatorio: '',
   cancelarEscutas: [],
   intervaloRelogio: null,
+  balcaoLancados: [], // vendas lançadas nesta sessão (para o "Desfazer")
 };
 
 // Atualiza o mapa rápido de itens por ID
@@ -713,6 +714,7 @@ function navegarParaTela(nomeTela) {
   if (nomeTela === 'relatorios') {
     carregarRelatorio();
   }
+  aplicarModoBalcao();
 }
 
 document.querySelectorAll('[data-ir-tela]').forEach((btn) => {
@@ -813,6 +815,7 @@ function iniciarEscutasFirestore() {
         estado.categorias = lista;
       }
       renderizarCardapio();
+      renderizarGradeBalcao();
     },
     () => {
       mostrarToast('Erro ao carregar categorias.', 'erro');
@@ -833,6 +836,7 @@ function iniciarEscutasFirestore() {
       }
       renderizarCardapio();
       renderizarPedidosAoVivo();
+      renderizarGradeBalcao();
     },
     () => {
       mostrarToast('Erro ao carregar itens do cardápio.', 'erro');
@@ -915,6 +919,7 @@ function atualizarTopoRecebendoPedidos() {
     ? 'Cardápio aberto para clientes'
     : 'Pausado — cardápio bloqueado';
   faixaPedidosDesligados.hidden = aceitando;
+  aplicarModoBalcao();
 }
 
 chkRecebendoPedidos.addEventListener('change', async () => {
@@ -1082,6 +1087,7 @@ function renderizarPedidosAoVivo() {
   };
 
   for (const p of estado.pedidosAoVivo) {
+    if (p.origem === 'balcao') continue; // vendas do modo balcão ficam no resumo e nos relatórios
     if (p.status === 'novo') grupos.novo.push(p);
     else if (p.status === 'preparo') grupos.preparo.push(p);
     else if (p.status === 'pronto') grupos.pronto.push(p);
@@ -1133,6 +1139,7 @@ function renderizarPedidosAoVivo() {
   preencherColuna('lista-pedidos-preparo', grupos.preparo, 'Nenhum pedido em preparo.');
   preencherColuna('lista-pedidos-pronto', grupos.pronto, 'Nenhum pedido pronto aguardando entrega.');
   preencherColuna('lista-pedidos-finalizados', grupos.finalizados, 'Nenhum pedido finalizado nas últimas 18 h.');
+  atualizarResumoBalcao();
 }
 
 // Delegação de clique para ações nos cartões de pedido
@@ -1170,6 +1177,222 @@ gradeColunasPedidos.addEventListener('click', async (e) => {
     mostrarToast('Não foi possível atualizar o pedido.', 'erro');
   } finally {
     btn.disabled = false;
+  }
+});
+
+// ─── MODO BALCÃO ───
+// Casa cheia / festa: o site vira só cardápio e a tela de pedidos vira uma grade com todos os
+// produtos, que cabe inteira na tela sem rolar. Tocar num produto lança 1 unidade já paga e entregue.
+const telaPedidos = document.getElementById('tela-pedidos');
+const telaBalcao = document.getElementById('tela-balcao');
+const gradeBalcao = document.getElementById('grade-balcao');
+const chkModoBalcao = document.getElementById('chk-modo-balcao');
+const legendaModoBalcao = document.getElementById('legenda-modo-balcao');
+const resumoBalcao = document.getElementById('resumo-balcao');
+const btnBalcaoDesfazer = document.getElementById('btn-balcao-desfazer');
+const DESFAZER_ATE_MS = 10 * 60 * 1000;
+
+const modoBalcaoLigado = () => estado.loja?.modoBalcao === true;
+
+function aplicarModoBalcao() {
+  const ligado = modoBalcaoLigado();
+  chkModoBalcao.checked = ligado;
+  legendaModoBalcao.textContent = ligado
+    ? 'Ligado · site só cardápio, venda aqui'
+    : 'Desligado · pedidos pelo celular';
+  telaPedidos.classList.toggle('em-balcao', ligado);
+  telaBalcao.hidden = !ligado;
+  resumoBalcao.hidden = !ligado;
+  document.body.classList.toggle('modo-balcao-ativo', ligado && estado.telaAtiva === 'pedidos');
+  if (ligado) {
+    if (!gradeBalcao.childElementCount) renderizarGradeBalcao();
+    requestAnimationFrame(ajustarGradeBalcao);
+  }
+}
+
+chkModoBalcao.addEventListener('change', async () => {
+  const novoValor = chkModoBalcao.checked;
+  estado.loja.modoBalcao = novoValor;
+  aplicarModoBalcao();
+  try {
+    await setDoc(doc(db, 'config', 'loja'), { modoBalcao: novoValor }, { merge: true });
+    mostrarToast(
+      novoValor ? 'Modo balcão ligado: o site virou só cardápio.' : 'Modo balcão desligado: pedidos pelo celular de volta.',
+      novoValor ? 'sucesso' : 'info'
+    );
+  } catch {
+    estado.loja.modoBalcao = !novoValor;
+    aplicarModoBalcao();
+    mostrarToast('Não foi possível trocar o modo balcão.', 'erro');
+  }
+});
+
+function itensDoBalcao() {
+  const ordemCat = new Map(estado.categorias.map((c, i) => [c.id, Number(c.ordem ?? i)]));
+  return estado.itens
+    .filter((it) => it && it.ativo !== false && !it.esgotado && Number(it.preco) > 0)
+    .slice()
+    .sort((a, b) =>
+      (ordemCat.get(a.categoria) ?? 999) - (ordemCat.get(b.categoria) ?? 999) ||
+      Number(a.ordem || 0) - Number(b.ordem || 0));
+}
+
+function renderizarGradeBalcao() {
+  if (!modoBalcaoLigado()) { gradeBalcao.innerHTML = ''; return; }
+  const itens = itensDoBalcao();
+  const corCat = new Map(estado.categorias.map((c) => [c.id, c.cor || '#F28BAA']));
+  // nome repetido (Brahma litrão × 600 ml): mostra o grupo para não confundir
+  const vezes = new Map();
+  for (const it of itens) vezes.set(it.nome, (vezes.get(it.nome) || 0) + 1);
+
+  gradeBalcao.innerHTML = itens.length
+    ? itens.map((it) => {
+      const grupo = vezes.get(it.nome) > 1 && it.grupo ? ` <small class="peca-balcao__grupo">${esc(it.grupo)}</small>` : '';
+      return `<button type="button" class="peca-balcao" data-lancar="${esc(it.id)}" data-nome="${esc(it.nome + (grupo ? ` (${it.grupo})` : ''))}" style="--c:${esc(corCat.get(it.categoria) || '#F28BAA')}" aria-label="Lançar ${esc(it.nome)}${grupo ? ' ' + esc(it.grupo) : ''}, ${esc(brl(it.preco))}">
+        <span class="peca-balcao__nome">${esc(it.nome)}${grupo}</span>
+        <span class="peca-balcao__rodape">
+          <span class="peca-balcao__preco">${esc(brl(it.preco))}</span>
+          <span class="peca-balcao__lancar">Lançar</span>
+        </span>
+      </button>`;
+    }).join('')
+    : '<div class="estado-vazio">Nenhum produto disponível. Confira o cardápio (itens ativos e não esgotados).</div>';
+  ajustarGradeBalcao();
+}
+
+// Escolhe colunas × linhas para o maior botão possível sem rolar; a última linha estica
+// (nada de buraco na grade).
+function ajustarGradeBalcao() {
+  if (telaBalcao.hidden || telaPedidos.hidden) return;
+  const pecas = [...gradeBalcao.querySelectorAll('.peca-balcao')];
+  const n = pecas.length;
+  if (!n) return;
+
+  const navInferior = document.querySelector('.barra-inferior-mobile');
+  const navVisivel = navInferior && getComputedStyle(navInferior).display !== 'none';
+  // no PC sobra uma faixa embaixo para a assinatura do rodapé não cobrir o último botão
+  const reserva = navVisivel ? navInferior.getBoundingClientRect().height + 8 : 30;
+  const topo = telaBalcao.getBoundingClientRect().top;
+  const altura = Math.max(160, Math.floor(window.innerHeight - topo - reserva));
+  const largura = telaBalcao.clientWidth;
+  telaBalcao.style.height = altura + 'px';
+
+  const gap = largura < 600 ? 4 : 8;
+  // Escolhe a grade que deixa a maior letra possível: cada botão precisa de 2 linhas de nome
+  // + a linha de preço/LANÇAR + respiro (altura ≈ 4,3 letras + borda) e de ~10 letras de
+  // largura (≈ 7,4 letras).
+  let melhor = { cols: 1, linhas: n, fonte: -1 };
+  for (let cols = 1; cols <= n; cols++) {
+    const linhas = Math.ceil(n / cols);
+    const w = (largura - gap * (cols - 1)) / cols;
+    const h = (altura - gap * (linhas - 1)) / linhas;
+    if (w <= 0 || h <= 0) continue;
+    const fonte = Math.min(24, (h - 9) / 4.3, (w - 4) / 7.4);
+    if (fonte > melhor.fonte) melhor = { cols, linhas, fonte };
+  }
+
+  const { cols, linhas } = melhor;
+  const fonte = Math.max(8, melhor.fonte);
+  gradeBalcao.style.setProperty('--gap', gap + 'px');
+  gradeBalcao.style.setProperty('--fonte', fonte.toFixed(1) + 'px');
+  gradeBalcao.classList.toggle('grade-balcao--apertada', fonte < 13);
+
+  // monta as linhas (elementos já existentes, só reagrupados)
+  const frag = document.createDocumentFragment();
+  for (let l = 0; l < linhas; l++) {
+    const linha = document.createElement('div');
+    linha.className = 'linha-balcao';
+    pecas.slice(l * cols, (l + 1) * cols).forEach((p) => linha.appendChild(p));
+    frag.appendChild(linha);
+  }
+  gradeBalcao.replaceChildren(frag);
+}
+
+let esperaAjuste = 0;
+const pedirAjuste = () => { cancelAnimationFrame(esperaAjuste); esperaAjuste = requestAnimationFrame(ajustarGradeBalcao); };
+window.addEventListener('resize', pedirAjuste);
+if ('ResizeObserver' in window) {
+  new ResizeObserver(pedirAjuste).observe(document.querySelector('.barra-topo-pedidos'));
+}
+
+gradeBalcao.addEventListener('click', (e) => {
+  const peca = e.target.closest('[data-lancar]');
+  if (!peca) return;
+  lancarNoBalcao(peca.getAttribute('data-lancar'), peca);
+});
+
+function lancarNoBalcao(id, peca) {
+  const it = estado.mapaItens.get(id);
+  if (!it || !(Number(it.preco) > 0)) return;
+  const preco = Number(it.preco);
+  const ref = doc(collection(db, 'pedidos'));
+  const venda = {
+    nome: 'Balcão',
+    local: 'Balcão',
+    itens: [{ id: it.id, nome: it.nome, grupo: it.grupo || '', cat: it.categoria || '', preco, qtd: 1 }],
+    total: preco,
+    status: 'entregue',
+    pago: true,
+    criadoEm: serverTimestamp(),
+    noite: noiteDe(new Date()),
+    origem: 'balcao',
+  };
+  const registro = { id: ref.id, nome: peca?.getAttribute('data-nome') || it.nome, preco, t: Date.now() };
+  estado.balcaoLancados.push(registro);
+  piscarPeca(peca, 'lancado');
+  if (navigator.vibrate) navigator.vibrate(15);
+  atualizarResumoBalcao();
+
+  // não espera o servidor: o Firestore guarda e manda assim que der (internet ruim em casa cheia)
+  setDoc(ref, venda).catch(() => {
+    estado.balcaoLancados = estado.balcaoLancados.filter((x) => x.id !== ref.id);
+    atualizarResumoBalcao();
+    piscarPeca(peca, 'falhou');
+    mostrarToast(`Não lançou ${registro.nome}. Toque de novo.`, 'erro');
+  });
+}
+
+function piscarPeca(peca, classe) {
+  if (!peca) return;
+  peca.classList.remove('lancado', 'falhou');
+  void peca.offsetWidth;
+  peca.classList.add(classe);
+  clearTimeout(peca._tempo);
+  peca._tempo = setTimeout(() => peca.classList.remove(classe), 900);
+}
+
+function atualizarResumoBalcao() {
+  if (resumoBalcao.hidden) return;
+  const noite = noiteDe(new Date());
+  const vendas = estado.pedidosAoVivo.filter((p) => p.origem === 'balcao' && p.status !== 'cancelado' && p.noite === noite);
+  const ids = new Set(vendas.map((p) => p.id));
+  // soma também o que já foi tocado e ainda está subindo para o servidor
+  const pendentes = estado.balcaoLancados.filter((x) => !ids.has(x.id));
+  const qtd = vendas.reduce((s, p) => s + (p.itens || []).reduce((a, i) => a + Number(i.qtd || 0), 0), 0) + pendentes.length;
+  const valor = vendas.reduce((s, p) => s + Number(p.total || 0), 0) + pendentes.reduce((s, x) => s + x.preco, 0);
+  document.getElementById('balcao-total-noite').textContent = `${qtd} ${qtd === 1 ? 'item' : 'itens'} · ${brl(valor)}`;
+
+  const ultimo = estado.balcaoLancados[estado.balcaoLancados.length - 1];
+  const podeDesfazer = ultimo && Date.now() - ultimo.t < DESFAZER_ATE_MS;
+  document.getElementById('balcao-ultimo').hidden = !podeDesfazer;
+  btnBalcaoDesfazer.hidden = !podeDesfazer;
+  if (podeDesfazer) {
+    document.getElementById('balcao-ultimo-texto').textContent = `${ultimo.nome} · ${brl(ultimo.preco)}`;
+  }
+}
+
+btnBalcaoDesfazer.addEventListener('click', async () => {
+  const ultimo = estado.balcaoLancados[estado.balcaoLancados.length - 1];
+  if (!ultimo || Date.now() - ultimo.t >= DESFAZER_ATE_MS) { atualizarResumoBalcao(); return; }
+  estado.balcaoLancados.pop();
+  atualizarResumoBalcao();
+  try {
+    await deleteDoc(doc(db, 'pedidos', ultimo.id));
+    mostrarToast(`Desfeito: ${ultimo.nome}.`, 'info');
+  } catch {
+    estado.balcaoLancados.push(ultimo);
+    atualizarResumoBalcao();
+    mostrarToast('Não foi possível desfazer.', 'erro');
   }
 });
 

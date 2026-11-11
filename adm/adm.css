@@ -1838,6 +1838,230 @@ svg {
   color: #8ce9ad;
 }
 
+/* ─── Modo Balcão ─── */
+/* Interruptor: desligado é o normal (cinza, não vermelho); ligado fica rosa */
+.trilho-interruptor--balcao {
+  background-color: var(--superficie-2);
+  border-color: var(--linha);
+}
+.trilho-interruptor--balcao::after {
+  background-color: var(--apagado);
+}
+.interruptor-grande input:checked + .trilho-interruptor--balcao {
+  background-color: #3a2029;
+  border-color: var(--rosa);
+}
+.interruptor-grande input:checked + .trilho-interruptor--balcao::after {
+  background-color: var(--rosa);
+}
+
+.em-balcao .bloco-recebendo,
+.em-balcao .acoes-topo-pedidos,
+.em-balcao .faixa-alerta-vermelha,
+.em-balcao .abas-status-pedidos,
+.em-balcao .grade-colunas-pedidos {
+  display: none !important;
+}
+.em-balcao .barra-topo-pedidos {
+  padding: 8px 12px;
+}
+.secao-painel.em-balcao {
+  gap: 10px;
+}
+body.modo-balcao-ativo .conteudo-principal {
+  padding-bottom: 0;
+}
+
+.resumo-balcao {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+.resumo-balcao small {
+  display: block;
+  font-size: 12px;
+  color: var(--apagado);
+}
+.resumo-balcao strong {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+}
+.resumo-balcao__noite strong {
+  color: var(--st-pronto);
+}
+.resumo-balcao__ultimo strong {
+  max-width: 26ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tela-balcao {
+  overflow: hidden;
+}
+.grade-balcao {
+  --gap: 8px;
+  --fonte: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  height: 100%;
+}
+.linha-balcao {
+  display: flex;
+  gap: var(--gap);
+  flex: 1 1 0;
+  min-height: 0;
+}
+.peca-balcao {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0;
+  padding: calc(var(--fonte) * 0.35) calc(var(--fonte) * 0.55);
+  border-radius: var(--raio);
+  border: 1px solid var(--linha);
+  border-top: 4px solid var(--c);
+  background-color: var(--superficie);
+  color: var(--texto);
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: background-color var(--transicao), transform 0.08s ease;
+}
+.peca-balcao:hover {
+  background-color: var(--superficie-2);
+}
+.peca-balcao:active {
+  transform: scale(0.97);
+}
+.peca-balcao:focus-visible {
+  outline: 2px solid var(--rosa);
+  outline-offset: 2px;
+}
+.peca-balcao__nome {
+  font-size: var(--fonte);
+  font-weight: 700;
+  line-height: 1.15;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.peca-balcao__grupo {
+  font-size: 0.75em;
+  font-weight: 500;
+  color: var(--texto-2);
+}
+.peca-balcao__rodape {
+  flex-shrink: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  line-height: 1.15;
+  margin-top: auto;
+}
+.peca-balcao__preco {
+  font-size: calc(var(--fonte) * 0.85);
+  font-weight: 600;
+  color: var(--texto-2);
+  white-space: nowrap;
+}
+.peca-balcao__lancar {
+  font-size: calc(var(--fonte) * 0.68);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--c);
+  white-space: nowrap;
+}
+/* Tocou: o botão confirma por um instante */
+.peca-balcao.lancado {
+  background-color: #14301f;
+  border-color: var(--st-pronto);
+}
+.peca-balcao.lancado .peca-balcao__lancar {
+  color: var(--st-pronto);
+  font-size: 0;
+}
+.peca-balcao.lancado .peca-balcao__lancar::after {
+  content: "Lançado ✓";
+  font-size: calc(var(--fonte) * 0.68);
+}
+.peca-balcao.falhou {
+  background-color: #36191b;
+  border-color: var(--st-cancelado);
+}
+/* Botão pequeno (muitos produtos ou tela de celular): preço e "lançar" empilham */
+.grade-balcao--apertada .peca-balcao {
+  padding: calc(var(--fonte) * 0.35) calc(var(--fonte) * 0.4);
+  border-top-width: 3px;
+  border-radius: 7px;
+}
+.grade-balcao--apertada .peca-balcao__nome {
+  line-height: 1.1;
+}
+.grade-balcao--apertada .peca-balcao__rodape {
+  flex-wrap: wrap;
+  row-gap: 0;
+  margin-top: 0;
+}
+
+/* Celular: barra do modo balcão numa linha só, para sobrar tela para os produtos */
+@media (max-width: 900px) {
+  .em-balcao .barra-topo-pedidos {
+    flex-wrap: nowrap;
+    gap: 10px;
+    padding: 6px 10px;
+  }
+  .em-balcao .rotulo-interruptor small,
+  .resumo-balcao__ultimo {
+    display: none !important;
+  }
+  .em-balcao .interruptor-grande {
+    gap: 8px;
+  }
+  .em-balcao .trilho-interruptor {
+    width: 46px;
+    height: 26px;
+  }
+  .em-balcao .trilho-interruptor::after {
+    width: 18px;
+    height: 18px;
+  }
+  .em-balcao .interruptor-grande input:checked + .trilho-interruptor::after {
+    transform: translateX(20px);
+  }
+  .resumo-balcao {
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+  .resumo-balcao__noite {
+    text-align: right;
+  }
+  .resumo-balcao strong {
+    font-size: 15px;
+    white-space: nowrap;
+  }
+  #btn-balcao-desfazer {
+    padding: 0 10px;
+  }
+  #btn-balcao-desfazer span {
+    display: none;
+  }
+}
+
 /* ─── Responsivo: Celular e Telas até 1200px / 900px ─── */
 @media (max-width: 1200px) {
   .grade-metricas {

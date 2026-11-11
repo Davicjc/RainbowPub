@@ -4,6 +4,8 @@ rules_version = '2';
 // - Pedidos: qualquer pessoa cria, mas só com o bar aceitando pedidos, formato fechado
 //   e (com GPS ligado) coordenadas dentro da caixa do bar. Lista/edição só da equipe.
 //   O cliente lê o próprio pedido pelo id (acompanhar o status).
+// - Modo balcão (config/loja.modoBalcao): o site vira só cardápio, cliente não cria pedido;
+//   a equipe lança as vendas do balcão pelo painel (já pagas e entregues).
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -55,10 +57,24 @@ service cloud.firestore {
         && d.noite is string && d.noite.size() == 10;
     }
 
+    // Venda lançada pela equipe no modo balcão: já sai paga e entregue.
+    function balcaoValido(d) {
+      return d.keys().hasOnly(['nome', 'local', 'itens', 'total', 'status', 'pago', 'criadoEm', 'noite', 'origem'])
+        && d.origem == 'balcao'
+        && d.itens is list && d.itens.size() >= 1 && d.itens.size() <= 40
+        && d.total is number && d.total > 0 && d.total <= 5000
+        && d.status == 'entregue'
+        && d.pago == true
+        && d.criadoEm == request.time
+        && d.noite is string && d.noite.size() == 10;
+    }
+
     match /pedidos/{id} {
       allow get: if true;
       allow list: if equipe();
-      allow create: if loja().aceitandoPedidos == true && pedidoValido(request.resource.data) && geoOk(request.resource.data);
+      allow create: if (equipe() && balcaoValido(request.resource.data))
+        || (loja().aceitandoPedidos == true && loja().get('modoBalcao', false) != true
+            && pedidoValido(request.resource.data) && geoOk(request.resource.data));
       allow update, delete: if equipe();
     }
 
