@@ -135,8 +135,10 @@ function montarBlocos() {
     const itens = itensDa(c.id);
     const menor = Math.min(...itens.map((i) => Number(i.preco) || 0));
     return `<button class="bloco" type="button" data-cat="${esc(c.id)}" style="--c:${esc(c.cor || '#f6cfdb')}">
+      <span class="bloco__tubo" aria-hidden="true"></span>
       <span class="bloco__nome">${esc(c.nome)}</span>
       <span class="bloco__info">${itens.length} opções · a partir de ${brl(menor)}</span>
+      <svg class="bloco__seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
     </button>`;
   }).join('');
   $('#blocos').innerHTML = html || '<p class="carregando">Cardápio vazio por enquanto.</p>';
@@ -166,10 +168,10 @@ function copo(cores = ['#d9a1b5', '#f3d9e2']) {
 
 function acao(item) {
   if (item.esgotado) return '<span class="esgotou">Acabou por hoje</span>';
-  if (soBalcao()) return '<span class="no-balcao">Peça no balcão</span>';
+  if (soBalcao()) return '';
   const n = estado.pedido.get(item.id) || 0;
   if (!n) {
-    return `<button class="add" type="button" data-add="${esc(item.id)}" aria-label="Adicionar ${esc(item.nome)}">${ICONE.mais}Adicionar</button>`;
+    return `<button class="add" type="button" data-add="${esc(item.id)}" aria-label="Adicionar ${esc(item.nome)}" title="Adicionar">${ICONE.mais}</button>`;
   }
   return `<div class="qtd" data-id="${esc(item.id)}">
     <button type="button" class="menos" data-delta="-1" aria-label="Tirar um ${esc(item.nome)}">${ICONE.menos}</button>
@@ -179,17 +181,18 @@ function acao(item) {
 }
 
 function htmlProd(item) {
-  // com foto: a foto vai grande no topo do cartão; sem foto, drinks da casa ganham o copo desenhado
+  // foto vira miniatura ao lado do nome; sem foto, drinks da casa ganham o copo desenhado
   const visual = item.foto
-    ? `<img class="prod__capa" src="${esc(item.foto)}" alt="${esc(item.nome)}" loading="lazy">`
+    ? `<img class="prod__foto" src="${esc(item.foto)}" alt="${esc(item.nome)}" loading="lazy">`
     : (item.cor ? copo(item.cor) : '');
-  return `<li class="prod ${item.foto ? 'prod--foto' : ''} ${item.esgotado ? 'esgotado' : ''}" data-prod="${esc(item.id)}">
+  const noPedido = estado.pedido.has(item.id) ? 'no-pedido' : '';
+  return `<li class="prod ${item.esgotado ? 'esgotado' : ''} ${noPedido}" data-prod="${esc(item.id)}">
     ${visual}
-    <div>
+    <div class="prod__texto">
       <h3 class="prod__nome">${esc(item.nome)}</h3>
       ${item.desc ? `<p class="prod__desc">${esc(item.desc)}</p>` : ''}
+      <span class="prod__preco">${brl(item.preco)}</span>
     </div>
-    <span class="prod__preco">${brl(item.preco)}</span>
     <div class="prod__acao">${acao(item)}</div>
   </li>`;
 }
@@ -200,6 +203,13 @@ function montarCategoria(catId) {
   const sec = $('#categoria');
   sec.style.setProperty('--c', cat.cor || '#f6cfdb');
   $('#catTitulo').textContent = cat.nome;
+  $('#avisoBalcao').hidden = !soBalcao();
+  // troca rápida entre as categorias (cada uma com a cor da sua faixa)
+  const abas = $('#abasCat');
+  abas.innerHTML = estado.categorias.filter((c) => itensDa(c.id).length).map((c) =>
+    `<button type="button" class="aba-cat" data-cat="${esc(c.id)}" style="--c:${esc(c.cor || '#f6cfdb')}" ${c.id === catId ? 'aria-current="true"' : ''}><i aria-hidden="true"></i>${esc(c.nome)}</button>`).join('');
+  const atual = abas.querySelector('[aria-current="true"]');
+  if (atual) abas.scrollLeft = atual.offsetLeft - (abas.clientWidth - atual.offsetWidth) / 2;
   const itens = itensDa(catId);
   const grupos = [...new Set(itens.map((i) => i.grupo || ''))];
   $('#catLista').innerHTML = grupos.map((g) => `
@@ -209,7 +219,11 @@ function montarCategoria(catId) {
 
 function atualizarProd(id) {
   const it = itemPorId(id);
-  document.querySelectorAll(`[data-prod="${CSS.escape(id)}"] .prod__acao`).forEach((el) => { el.innerHTML = acao(it); });
+  document.querySelectorAll(`[data-prod="${CSS.escape(id)}"]`).forEach((li) => {
+    li.classList.toggle('no-pedido', estado.pedido.has(id));
+    const el = li.querySelector('.prod__acao');
+    if (el) el.innerHTML = acao(it);
+  });
 }
 
 /* ─────────────── Navegação (hash: #drinks, #cervejas…) ─────────────── */
@@ -333,7 +347,7 @@ function passoRevisar() {
     const it = itemPorId(id);
     if (!it) return '';
     const grupo = it.grupo && !/autora/i.test(it.grupo) && it.grupo !== it.nome ? `<small>${esc(it.grupo)}</small>` : '';
-    return `<li class="linha">
+    return `<li class="linha linha--pedido" style="--c:${esc(catPorId(it.categoria)?.cor || '#f6cfdb')}">
       <span class="linha__nome">${esc(it.nome)}${grupo}</span>
       <span class="linha__valor">${brl(n * it.preco)}</span>
       <div class="qtd" data-id="${esc(id)}">

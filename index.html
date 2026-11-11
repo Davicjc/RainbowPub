@@ -63,8 +63,8 @@
     </div>
 
     <div class="acoes" id="acoes">
-      <a class="botao botao--grande" href="#cardapio" id="fazerPedido">Fazer meu pedido</a>
-      <a class="botao botao--contorno" href="sobre/">Conhecer o Rainbow</a>
+      <a class="botao botao--grande botao--arco" href="#cardapio" id="fazerPedido">Fazer meu pedido</a>
+      <a class="link-seta" href="sobre/">Conhecer o Rainbow <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
     </div>
   </header>
 
@@ -79,12 +79,15 @@
     <!-- Tela 2: uma categoria por vez -->
     <section class="categoria" id="categoria" hidden aria-labelledby="catTitulo">
       <div class="categoria__topo">
-        <button class="voltar" id="voltar" type="button">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
-          Voltar
-        </button>
-        <h2 class="categoria__nome" id="catTitulo"></h2>
+        <div class="categoria__linha">
+          <button class="voltar voltar--icone" id="voltar" type="button" aria-label="Voltar para as categorias">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+          </button>
+          <h2 class="categoria__nome" id="catTitulo"></h2>
+        </div>
+        <nav class="abas-cat" id="abasCat" aria-label="Trocar de categoria"></nav>
       </div>
+      <p class="aviso-balcao" id="avisoBalcao" hidden><strong>Hoje os pedidos são feitos no balcão.</strong> Aqui você confere o que tem e os preços.</p>
       <div id="catLista"></div>
       <button class="botao botao--contorno botao--largo" id="voltarFim" type="button">Ver outras opções</button>
     </section>

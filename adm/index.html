@@ -52,49 +52,26 @@
 
       <nav class="menu-lateral" aria-label="Menu principal">
         <button type="button" class="item-menu ativo" data-ir-tela="pedidos">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-            <rect x="9" y="3" width="6" height="4" rx="1"/>
-            <path d="M9 12h6"/>
-            <path d="M9 16h4"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6"/><path d="M9 16h4"/></svg>
           <span>Pedidos</span>
           <span class="selo-menu" id="badge-menu-pedidos" hidden>0</span>
         </button>
-
         <button type="button" class="item-menu" data-ir-tela="cardapio">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M4 6h16"/>
-            <path d="M4 12h16"/>
-            <path d="M4 18h10"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
           <span>Cardápio</span>
         </button>
-
-        <button type="button" class="item-menu" data-ir-tela="pagina">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-            <circle cx="8.5" cy="8.5" r="1.5"/>
-            <polyline points="21 15 16 10 5 21"/>
-          </svg>
-          <span>Página</span>
+        <button type="button" class="item-menu" data-ir-tela="estoque">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 13v8"/></svg>
+          <span>Estoque</span>
+          <span class="selo-menu selo-menu--alerta" id="badge-menu-estoque" hidden title="Itens acabando ou zerados">0</span>
         </button>
-
-        <button type="button" class="item-menu" data-ir-tela="bar">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M3 9l9-6 9 6v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-            <polyline points="9 22 9 12 15 12 15 22"/>
-          </svg>
-          <span>Bar</span>
-        </button>
-
         <button type="button" class="item-menu" data-ir-tela="relatorios">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <line x1="18" y1="20" x2="18" y2="10"/>
-            <line x1="12" y1="20" x2="12" y2="4"/>
-            <line x1="6" y1="20" x2="6" y2="14"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
           <span>Relatórios</span>
+        </button>
+        <button type="button" class="item-menu" data-ir-tela="bar" data-grupo="ajustes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+          <span>Ajustes</span>
         </button>
       </nav>
 
@@ -323,12 +300,56 @@
           </div>
         </form>
 
+        <!-- Busca e atalhos: achar um item sem rolar a lista inteira -->
+        <div class="barra-ferramentas-cardapio">
+          <input type="search" id="busca-cardapio" class="busca" placeholder="Buscar item (ex.: heineken, batata)" autocomplete="off">
+          <nav class="atalhos-categorias" id="atalhos-categorias" aria-label="Ir para a categoria"></nav>
+        </div>
+        <p id="cardapio-sem-resultado" class="estado-vazio" hidden>Nenhum item com esse nome.</p>
+
         <!-- Lista de Categorias e seus Itens -->
         <div id="container-categorias" class="lista-categorias"></div>
       </section>
 
+      <!-- 2.b TELA DE ESTOQUE -->
+      <section id="tela-estoque" class="secao-painel" hidden>
+        <div class="cabecalho-secao">
+          <div>
+            <h1>Estoque</h1>
+            <p class="texto-apoio">Baixa sozinho: na hora nas vendas do balcão e quando um pedido do site entra em preparo. Cancelou, apagou ou voltou, o estoque volta.</p>
+          </div>
+          <div class="acoes-cabecalho">
+            <button type="button" id="btn-estoque-importar" class="btn btn-secundario">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2h8l-1 7a4 4 0 0 1-6 0z"/><path d="M12 13v8"/><path d="M8 21h8"/></svg>
+              <span>Contar bebidas do cardápio</span>
+            </button>
+            <button type="button" id="btn-estoque-novo" class="btn btn-principal">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>Novo item de estoque</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="barra-filtros-estoque">
+          <div class="filtros-estoque" role="tablist" aria-label="Filtrar estoque">
+            <button type="button" class="filtro-estoque ativo" data-filtro-estoque="todos"><span>Todos</span><b id="est-n-todos">0</b></button>
+            <button type="button" class="filtro-estoque" data-filtro-estoque="zerado"><i class="ponto-sit ponto-sit--zerado" aria-hidden="true"></i><span>Acabou</span><b id="est-n-zerado">0</b></button>
+            <button type="button" class="filtro-estoque" data-filtro-estoque="baixo"><i class="ponto-sit ponto-sit--baixo" aria-hidden="true"></i><span>Acabando</span><b id="est-n-baixo">0</b></button>
+            <button type="button" class="filtro-estoque" data-filtro-estoque="ok"><i class="ponto-sit ponto-sit--ok" aria-hidden="true"></i><span>Ok</span><b id="est-n-ok">0</b></button>
+          </div>
+          <input type="search" id="busca-estoque" class="busca" placeholder="Buscar no estoque" autocomplete="off">
+        </div>
+
+        <div id="lista-estoque" class="lista-estoque"></div>
+        <p id="estoque-sem-controle" class="texto-apoio nota-sem-controle"></p>
+      </section>
+
       <!-- 3. TELA DA PÁGINA (config/sobre + fotos) -->
       <section id="tela-pagina" class="secao-painel" hidden>
+        <div class="subnav-ajustes" role="tablist" aria-label="Ajustes">
+          <button type="button" class="subnav-ajustes__aba" data-ir-tela="bar">Bar, horários e GPS</button>
+          <button type="button" class="subnav-ajustes__aba ativa" data-ir-tela="pagina">Página O Rainbow</button>
+        </div>
         <div class="cabecalho-secao">
           <div>
             <h1>Página</h1>
@@ -422,6 +443,10 @@
 
       <!-- 4. TELA DO BAR (config/loja) -->
       <section id="tela-bar" class="secao-painel" hidden>
+        <div class="subnav-ajustes" role="tablist" aria-label="Ajustes">
+          <button type="button" class="subnav-ajustes__aba ativa" data-ir-tela="bar">Bar, horários e GPS</button>
+          <button type="button" class="subnav-ajustes__aba" data-ir-tela="pagina">Página O Rainbow</button>
+        </div>
         <div class="cabecalho-secao">
           <div>
             <h1>Configurações do Bar</h1>
@@ -660,49 +685,26 @@
     <!-- Barra de Abas Inferior (Celular até 900px) -->
     <nav class="barra-inferior-mobile nao-imprimir" aria-label="Navegação inferior">
       <button type="button" class="aba-mobile ativa" data-ir-tela="pedidos">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
-          <rect x="9" y="3" width="6" height="4" rx="1"/>
-          <path d="M9 12h6"/>
-          <path d="M9 16h4"/>
-        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6"/><path d="M9 16h4"/></svg>
         <span>Pedidos</span>
         <span class="selo-aba-mobile" id="badge-mobile-pedidos" hidden>0</span>
       </button>
-
       <button type="button" class="aba-mobile" data-ir-tela="cardapio">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M4 6h16"/>
-          <path d="M4 12h16"/>
-          <path d="M4 18h10"/>
-        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/></svg>
         <span>Cardápio</span>
       </button>
-
-      <button type="button" class="aba-mobile" data-ir-tela="pagina">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-          <circle cx="8.5" cy="8.5" r="1.5"/>
-          <polyline points="21 15 16 10 5 21"/>
-        </svg>
-        <span>Página</span>
+      <button type="button" class="aba-mobile" data-ir-tela="estoque">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 13v8"/></svg>
+        <span>Estoque</span>
+        <span class="selo-aba-mobile selo-aba-mobile--alerta" id="badge-mobile-estoque" hidden>0</span>
       </button>
-
-      <button type="button" class="aba-mobile" data-ir-tela="bar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M3 9l9-6 9 6v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-          <polyline points="9 22 9 12 15 12 15 22"/>
-        </svg>
-        <span>Bar</span>
-      </button>
-
       <button type="button" class="aba-mobile" data-ir-tela="relatorios">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <line x1="18" y1="20" x2="18" y2="10"/>
-          <line x1="12" y1="20" x2="12" y2="4"/>
-          <line x1="6" y1="20" x2="6" y2="14"/>
-        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         <span>Relatórios</span>
+      </button>
+      <button type="button" class="aba-mobile" data-ir-tela="bar" data-grupo="ajustes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+        <span>Ajustes</span>
       </button>
     </nav>
   </div>
@@ -787,6 +789,85 @@
         <button type="button" id="btn-fechar-modal-notif" class="btn btn-principal">Concluir</button>
       </div>
     </div>
+  </div>
+
+  <!-- Modal: Entrada ou contagem de estoque -->
+  <div id="modal-estoque-qtd" class="sobreposicao-modal nao-imprimir" hidden role="dialog" aria-modal="true" aria-labelledby="eq-titulo">
+    <form class="caixa-modal caixa-modal--estoque" id="form-estoque-qtd" novalidate>
+      <h2 id="eq-titulo" class="titulo-modal">Entrada</h2>
+      <p id="eq-agora" class="mensagem-modal"></p>
+      <div id="eq-atalhos" class="atalhos-entrada"></div>
+      <label class="rotulo-modal" for="eq-valor" id="eq-rotulo">Quanto chegou?</label>
+      <div class="linha-qtd-modal">
+        <input type="number" id="eq-valor" inputmode="decimal" step="any" min="0" placeholder="0">
+        <div id="eq-unidades" class="seletor-unidade" role="radiogroup" aria-label="Unidade"></div>
+      </div>
+      <p id="eq-resultado" class="resultado-estoque" aria-live="polite"></p>
+      <div class="acoes-modal">
+        <button type="button" id="eq-cancelar" class="btn btn-secundario">Voltar</button>
+        <button type="submit" id="eq-confirmar" class="btn btn-principal">Somar ao estoque</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Modal: Criar ou editar item de estoque e ligar aos produtos -->
+  <div id="modal-insumo" class="sobreposicao-modal nao-imprimir" hidden role="dialog" aria-modal="true" aria-labelledby="ins-titulo">
+    <form class="caixa-modal caixa-modal--insumo" id="form-insumo" novalidate>
+      <h2 id="ins-titulo" class="titulo-modal">Novo item de estoque</h2>
+      <div class="campo">
+        <label for="ins-nome">Nome</label>
+        <input type="text" id="ins-nome" maxlength="60" placeholder="Ex.: Batata congelada, Heineken long neck" autocomplete="off">
+      </div>
+      <div class="campo">
+        <span class="rotulo-modal">Como você conta isso?</span>
+        <div class="escolha-unidade" role="radiogroup" aria-label="Como contar">
+          <label class="opcao-unidade"><input type="radio" name="ins-unidade" value="un" checked><strong>Por unidade</strong><small>garrafa, lata, espeto</small></label>
+          <label class="opcao-unidade"><input type="radio" name="ins-unidade" value="g"><strong>Por peso</strong><small>gramas e quilos</small></label>
+          <label class="opcao-unidade"><input type="radio" name="ins-unidade" value="ml"><strong>Por volume</strong><small>ml e litros</small></label>
+        </div>
+      </div>
+      <div class="grade-campos-2">
+        <div class="campo">
+          <label for="ins-qtd">Tem agora</label>
+          <div class="linha-qtd-campo">
+            <input type="number" id="ins-qtd" inputmode="decimal" step="any" min="0" placeholder="0">
+            <select id="ins-qtd-un" aria-label="Unidade da quantidade"></select>
+          </div>
+        </div>
+        <div class="campo">
+          <label for="ins-min">Avisar quando chegar em</label>
+          <div class="linha-qtd-campo">
+            <input type="number" id="ins-min" inputmode="decimal" step="any" min="0" placeholder="0">
+            <select id="ins-min-un" aria-label="Unidade do aviso"></select>
+          </div>
+        </div>
+      </div>
+      <div class="campo">
+        <span class="rotulo-modal">Produtos do cardápio que gastam isso</span>
+        <p class="texto-apoio">Quanto sai a cada 1 vendido. Ex.: 1 garrafa, 300 g de batata.</p>
+        <div id="ins-usos" class="lista-usos"></div>
+        <div id="ins-sugestoes" class="sugestoes-uso"></div>
+        <button type="button" id="ins-add-uso" class="btn btn-secundario btn-compacto">+ Ligar produto</button>
+      </div>
+      <div class="acoes-modal acoes-modal--insumo">
+        <button type="button" id="ins-excluir" class="btn btn-perigo" hidden>Excluir</button>
+        <button type="button" id="ins-cancelar" class="btn btn-secundario">Cancelar</button>
+        <button type="submit" id="ins-salvar" class="btn btn-principal">Salvar</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Modal: Contar bebidas de uma vez (1 vendido = 1 a menos) -->
+  <div id="modal-importar" class="sobreposicao-modal nao-imprimir" hidden role="dialog" aria-modal="true" aria-labelledby="imp-titulo">
+    <form class="caixa-modal caixa-modal--importar" id="form-importar" novalidate>
+      <h2 id="imp-titulo" class="titulo-modal">Contar bebidas do cardápio</h2>
+      <p class="mensagem-modal">Cada produto marcado ganha um estoque próprio: vendeu 1, sai 1. Digite quantos tem agora (dá para contar depois).</p>
+      <div id="imp-lista" class="lista-importar"></div>
+      <div class="acoes-modal">
+        <button type="button" id="imp-cancelar" class="btn btn-secundario">Cancelar</button>
+        <button type="submit" id="imp-criar" class="btn btn-principal">Criar</button>
+      </div>
+    </form>
   </div>
 
   <!-- Diálogo de Confirmação Próprio -->
