@@ -1229,7 +1229,6 @@ const telaBalcao = document.getElementById('tela-balcao');
 const gradeBalcao = document.getElementById('grade-balcao');
 const resumoBalcao = document.getElementById('resumo-balcao');
 const btnBalcaoDesfazer = document.getElementById('btn-balcao-desfazer');
-const DESFAZER_ATE_MS = 10 * 60 * 1000;
 
 const modoBalcaoLigado = () => estado.loja?.modoBalcao === true;
 
@@ -1391,26 +1390,29 @@ function atualizarResumoBalcao() {
   document.getElementById('balcao-total-noite').textContent = `${qtd} ${qtd === 1 ? 'item' : 'itens'} · ${brl(valor)}`;
 
   const ultimo = estado.balcaoLancados[estado.balcaoLancados.length - 1];
-  const podeDesfazer = ultimo && Date.now() - ultimo.t < DESFAZER_ATE_MS;
-  document.getElementById('balcao-ultimo').hidden = !podeDesfazer;
-  btnBalcaoDesfazer.hidden = !podeDesfazer;
-  if (podeDesfazer) {
+  // "Voltar" fica sempre à vista; apagado quando não há o que desfazer nesta tela
+  document.getElementById('balcao-ultimo').hidden = !ultimo;
+  btnBalcaoDesfazer.disabled = !ultimo;
+  btnBalcaoDesfazer.title = ultimo
+    ? `Voltar: desfaz ${ultimo.nome} (${brl(ultimo.preco)})`
+    : 'Voltar: nada lançado ainda';
+  if (ultimo) {
     document.getElementById('balcao-ultimo-texto').textContent = `${ultimo.nome} · ${brl(ultimo.preco)}`;
   }
 }
 
 btnBalcaoDesfazer.addEventListener('click', async () => {
   const ultimo = estado.balcaoLancados[estado.balcaoLancados.length - 1];
-  if (!ultimo || Date.now() - ultimo.t >= DESFAZER_ATE_MS) { atualizarResumoBalcao(); return; }
+  if (!ultimo) return;
   estado.balcaoLancados.pop();
   atualizarResumoBalcao();
   try {
     await deleteDoc(doc(db, 'pedidos', ultimo.id));
-    mostrarToast(`Desfeito: ${ultimo.nome}.`, 'info');
+    mostrarToast(`Voltou: ${ultimo.nome} saiu das vendas.`, 'info');
   } catch {
     estado.balcaoLancados.push(ultimo);
     atualizarResumoBalcao();
-    mostrarToast('Não foi possível desfazer.', 'erro');
+    mostrarToast('Não foi possível voltar o último lançamento.', 'erro');
   }
 });
 

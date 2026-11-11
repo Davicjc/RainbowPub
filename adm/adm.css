@@ -1975,6 +1975,11 @@ body.modo-balcao-ativo .conteudo-principal {
   font-size: 16px;
   font-weight: 700;
 }
+.btn-balcao-voltar:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .resumo-balcao__noite strong {
   color: var(--st-pronto);
 }
@@ -2154,10 +2159,7 @@ body.modo-balcao-ativo .conteudo-principal {
   }
   #btn-balcao-desfazer {
     min-height: 36px;
-    padding: 0 10px;
-  }
-  #btn-balcao-desfazer span {
-    display: none;
+    padding: 0 12px;
   }
 }
 
