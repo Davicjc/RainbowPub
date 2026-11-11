@@ -132,26 +132,29 @@
       <!-- 1. TELA DE PEDIDOS -->
       <section id="tela-pedidos" class="secao-painel">
         <div class="barra-topo-pedidos">
-          <div class="bloco-interruptor-loja bloco-recebendo">
-            <label class="interruptor-grande" for="chk-recebendo-pedidos">
-              <input type="checkbox" id="chk-recebendo-pedidos" checked>
-              <span class="trilho-interruptor"></span>
-              <span class="rotulo-interruptor">
-                <strong>Recebendo pedidos</strong>
-                <small id="legenda-recebendo-pedidos">Cardápio aberto para clientes</small>
+          <!-- Como o bar recebe pedidos agora: uma opção por vez -->
+          <div class="seletor-modo" role="radiogroup" aria-label="Como o bar está recebendo pedidos">
+            <button type="button" class="seletor-modo__op" role="radio" aria-checked="false" data-modo-loja="recebendo">
+              <span class="seletor-modo__ponto" aria-hidden="true"></span>
+              <span class="seletor-modo__txt">
+                <strong><span class="so-pc">Recebendo pedidos</span><span class="so-cel">Recebendo</span></strong>
+                <small>Cliente pede pelo celular</small>
               </span>
-            </label>
-          </div>
-
-          <div class="bloco-interruptor-loja">
-            <label class="interruptor-grande" for="chk-modo-balcao" title="Casa cheia ou festa: o site vira só cardápio e a equipe lança as vendas aqui">
-              <input type="checkbox" id="chk-modo-balcao">
-              <span class="trilho-interruptor trilho-interruptor--balcao"></span>
-              <span class="rotulo-interruptor">
-                <strong>Modo balcão</strong>
-                <small id="legenda-modo-balcao">Desligado · pedidos pelo celular</small>
+            </button>
+            <button type="button" class="seletor-modo__op" role="radio" aria-checked="false" data-modo-loja="balcao" title="Casa cheia ou festa: o site vira só cardápio e a equipe lança as vendas aqui">
+              <span class="seletor-modo__ponto" aria-hidden="true"></span>
+              <span class="seletor-modo__txt">
+                <strong><span class="so-pc">Modo balcão</span><span class="so-cel">Balcão</span></strong>
+                <small>Site só cardápio, venda aqui</small>
               </span>
-            </label>
+            </button>
+            <button type="button" class="seletor-modo__op" role="radio" aria-checked="false" data-modo-loja="fechado">
+              <span class="seletor-modo__ponto" aria-hidden="true"></span>
+              <span class="seletor-modo__txt">
+                <strong>Fechado</strong>
+                <small>Ninguém pede pelo site</small>
+              </span>
+            </button>
           </div>
 
           <!-- Resumo do modo balcão: vendas da noite e desfazer a última -->
@@ -204,7 +207,7 @@
             <line x1="12" y1="8" x2="12" y2="12"/>
             <line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
-          <span>O cardápio não está aceitando pedidos no momento. Ligue a chave acima para liberar.</span>
+          <span>Fechado: o site não aceita pedidos. Escolha “Recebendo pedidos” acima para liberar.</span>
         </div>
 
         <!-- Abas de filtro com contagem -->

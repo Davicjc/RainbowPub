@@ -907,34 +907,53 @@ function iniciarEscutasFirestore() {
 }
 
 // ─── 2. TELA DE PEDIDOS (AO VIVO) ───
-const chkRecebendoPedidos = document.getElementById('chk-recebendo-pedidos');
-const legendaRecebendoPedidos = document.getElementById('legenda-recebendo-pedidos');
+const botoesModoLoja = document.querySelectorAll('[data-modo-loja]');
 const faixaPedidosDesligados = document.getElementById('faixa-pedidos-desligados');
 const gradeColunasPedidos = document.getElementById('grade-colunas-pedidos');
 
+// O bar está em um destes três modos (nunca dois ao mesmo tempo):
+//   recebendo → cliente pede pelo celular
+//   balcao    → site só cardápio, equipe lança as vendas na grade
+//   fechado   → ninguém pede pelo site
+const MODOS_LOJA = {
+  recebendo: { campos: { aceitandoPedidos: true, modoBalcao: false }, aviso: 'Recebendo pedidos pelo celular.', tipo: 'sucesso' },
+  balcao: { campos: { aceitandoPedidos: false, modoBalcao: true }, aviso: 'Modo balcão: o site virou só cardápio.', tipo: 'sucesso' },
+  fechado: { campos: { aceitandoPedidos: false, modoBalcao: false }, aviso: 'Fechado: ninguém pede pelo site.', tipo: 'info' },
+};
+
+function modoLojaAtual() {
+  if (estado.loja?.modoBalcao === true) return 'balcao';
+  return estado.loja?.aceitandoPedidos ? 'recebendo' : 'fechado';
+}
+
 function atualizarTopoRecebendoPedidos() {
-  const aceitando = Boolean(estado.loja?.aceitandoPedidos);
-  chkRecebendoPedidos.checked = aceitando;
-  legendaRecebendoPedidos.textContent = aceitando
-    ? 'Cardápio aberto para clientes'
-    : 'Pausado — cardápio bloqueado';
-  faixaPedidosDesligados.hidden = aceitando;
+  const modo = modoLojaAtual();
+  botoesModoLoja.forEach((b) => {
+    const ativo = b.getAttribute('data-modo-loja') === modo;
+    b.setAttribute('aria-checked', ativo ? 'true' : 'false');
+    b.classList.toggle('ativo', ativo);
+  });
+  faixaPedidosDesligados.hidden = modo !== 'fechado';
   aplicarModoBalcao();
 }
 
-chkRecebendoPedidos.addEventListener('change', async () => {
-  const novoValor = chkRecebendoPedidos.checked;
-  estado.loja.aceitandoPedidos = novoValor;
-  atualizarTopoRecebendoPedidos();
-  try {
-    await setDoc(doc(db, 'config', 'loja'), { aceitandoPedidos: novoValor }, { merge: true });
-    mostrarToast(
-      novoValor ? 'Bar recebendo pedidos novamente.' : 'Recebimento de pedidos pausado.',
-      novoValor ? 'sucesso' : 'info'
-    );
-  } catch {
-    mostrarToast('Não foi possível alterar o status da loja.', 'erro');
-  }
+botoesModoLoja.forEach((b) => {
+  b.addEventListener('click', async () => {
+    const modo = b.getAttribute('data-modo-loja');
+    if (modo === modoLojaAtual()) return;
+    const antes = { aceitandoPedidos: estado.loja.aceitandoPedidos, modoBalcao: estado.loja.modoBalcao };
+    const { campos, aviso, tipo } = MODOS_LOJA[modo];
+    Object.assign(estado.loja, campos);
+    atualizarTopoRecebendoPedidos();
+    try {
+      await setDoc(doc(db, 'config', 'loja'), campos, { merge: true });
+      mostrarToast(aviso, tipo);
+    } catch {
+      Object.assign(estado.loja, antes);
+      atualizarTopoRecebendoPedidos();
+      mostrarToast('Não foi possível trocar o modo do bar.', 'erro');
+    }
+  });
 });
 
 // Abas de status (Novos | Preparando | Prontos | Finalizados)
@@ -1208,8 +1227,6 @@ gradeColunasPedidos.addEventListener('click', async (e) => {
 const telaPedidos = document.getElementById('tela-pedidos');
 const telaBalcao = document.getElementById('tela-balcao');
 const gradeBalcao = document.getElementById('grade-balcao');
-const chkModoBalcao = document.getElementById('chk-modo-balcao');
-const legendaModoBalcao = document.getElementById('legenda-modo-balcao');
 const resumoBalcao = document.getElementById('resumo-balcao');
 const btnBalcaoDesfazer = document.getElementById('btn-balcao-desfazer');
 const DESFAZER_ATE_MS = 10 * 60 * 1000;
@@ -1218,10 +1235,6 @@ const modoBalcaoLigado = () => estado.loja?.modoBalcao === true;
 
 function aplicarModoBalcao() {
   const ligado = modoBalcaoLigado();
-  chkModoBalcao.checked = ligado;
-  legendaModoBalcao.textContent = ligado
-    ? 'Ligado · site só cardápio, venda aqui'
-    : 'Desligado · pedidos pelo celular';
   telaPedidos.classList.toggle('em-balcao', ligado);
   telaBalcao.hidden = !ligado;
   resumoBalcao.hidden = !ligado;
@@ -1231,23 +1244,6 @@ function aplicarModoBalcao() {
     requestAnimationFrame(ajustarGradeBalcao);
   }
 }
-
-chkModoBalcao.addEventListener('change', async () => {
-  const novoValor = chkModoBalcao.checked;
-  estado.loja.modoBalcao = novoValor;
-  aplicarModoBalcao();
-  try {
-    await setDoc(doc(db, 'config', 'loja'), { modoBalcao: novoValor }, { merge: true });
-    mostrarToast(
-      novoValor ? 'Modo balcão ligado: o site virou só cardápio.' : 'Modo balcão desligado: pedidos pelo celular de volta.',
-      novoValor ? 'sucesso' : 'info'
-    );
-  } catch {
-    estado.loja.modoBalcao = !novoValor;
-    aplicarModoBalcao();
-    mostrarToast('Não foi possível trocar o modo balcão.', 'erro');
-  }
-});
 
 function itensDoBalcao() {
   const ordemCat = new Map(estado.categorias.map((c, i) => [c.id, Number(c.ordem ?? i)]));
