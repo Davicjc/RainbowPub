@@ -998,7 +998,7 @@ function montarHtmlCartaoPedido(p) {
     : '';
 
   // Selo de GPS
-  let textoGps = 'sem GPS';
+  let textoGps = p.origem === 'balcao' ? 'Venda no balcão' : 'sem GPS';
   if (
     p.geo &&
     typeof p.geo.lat === 'number' &&
@@ -1087,7 +1087,6 @@ function renderizarPedidosAoVivo() {
   };
 
   for (const p of estado.pedidosAoVivo) {
-    if (p.origem === 'balcao') continue; // vendas do modo balcão ficam no resumo e nos relatórios
     if (p.status === 'novo') grupos.novo.push(p);
     else if (p.status === 'preparo') grupos.preparo.push(p);
     else if (p.status === 'pronto') grupos.pronto.push(p);
