@@ -136,13 +136,16 @@
 
           <!-- Resumo do modo balcão: vendas da noite e desfazer a última -->
           <div class="resumo-balcao" id="resumo-balcao" hidden>
-            <div class="resumo-balcao__noite">
-              <small>Vendas no balcão hoje</small>
-              <strong id="balcao-total-noite">0 · R$ 0,00</strong>
-            </div>
-            <div class="resumo-balcao__ultimo" id="balcao-ultimo" hidden>
-              <small>Último lançado</small>
-              <strong id="balcao-ultimo-texto"></strong>
+            <div class="resumo-balcao__info">
+              <div class="resumo-balcao__noite">
+                <small><span class="so-pc">Vendas no balcão hoje</span><span class="so-cel">Hoje</span></small>
+                <strong id="balcao-total-noite">0 · R$ 0,00</strong>
+              </div>
+              <div class="resumo-balcao__ultimo" id="balcao-ultimo" hidden>
+                <small><span class="so-pc">Último lançado</span><span class="so-cel">Último</span></small>
+                <strong id="balcao-ultimo-texto"></strong>
+              </div>
+              <p class="resumo-balcao__dica so-cel" id="balcao-dica-mobile">Toque num produto para lançar</p>
             </div>
             <button type="button" id="btn-balcao-desfazer" class="btn btn-secundario btn-balcao-voltar" title="Voltar: desfaz o último lançamento" disabled>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -250,8 +253,20 @@
           </div>
         </div>
 
-        <!-- MODO BALCÃO: grade de produtos que cabe inteira na tela; tocar = venda paga e entregue -->
+        <!-- MODO BALCÃO: no desktop grade inteira na tela; no celular busca, categorias e botões grandes -->
         <div id="tela-balcao" class="tela-balcao" hidden aria-label="Lançar vendas do balcão">
+          <div id="balcao-barra-mobile" class="balcao-barra-mobile">
+            <div class="balcao-busca-wrap">
+              <input type="search" id="busca-balcao" class="busca busca-balcao" placeholder="Buscar produto (ex.: heineken, batata)" autocomplete="off" aria-label="Buscar produto no balcão">
+              <button type="button" id="btn-limpar-busca-balcao" class="btn-limpar-busca" hidden aria-label="Limpar busca">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <nav id="balcao-filtros-cat" class="atalhos-categorias balcao-filtros-cat" aria-label="Filtrar produtos por categoria"></nav>
+          </div>
           <div id="grade-balcao" class="grade-balcao"></div>
         </div>
       </section>

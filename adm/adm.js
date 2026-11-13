@@ -98,6 +98,9 @@ const estado = {
   cancelarEscutas: [],
   intervaloRelogio: null,
   balcaoLancados: [], // vendas lançadas nesta sessão (para o "Voltar")
+  balcaoCategoria: 'todos',
+  balcaoBusca: '',
+  balcaoModoMobile: null,
   // Estoque
   estoque: [],
   mapaEstoque: new Map(),
@@ -109,6 +112,8 @@ const estado = {
   buscaEstoque: '',
   buscaCardapio: '',
 };
+
+const normalizar = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
 // Atualiza o mapa rápido de itens por ID
 function atualizarMapaItens() {
@@ -1392,15 +1397,31 @@ function sincronizarEsgotadosPorEstoque({ itens = null, insumos = null } = {}) {
 }
 
 // ─── MODO BALCÃO ───
-// Casa cheia / festa: o site vira só cardápio e a tela de pedidos vira uma grade com todos os
-// produtos, que cabe inteira na tela sem rolar. Tocar num produto lança 1 unidade já paga e entregue.
+// Casa cheia / festa: o site vira só cardápio e a tela de pedidos vira lançamento rápido.
+// No PC, todos os produtos cabem sem rolar; no celular, vira grade por categoria com busca.
 const telaPedidos = document.getElementById('tela-pedidos');
 const telaBalcao = document.getElementById('tela-balcao');
 const gradeBalcao = document.getElementById('grade-balcao');
 const resumoBalcao = document.getElementById('resumo-balcao');
 const btnBalcaoDesfazer = document.getElementById('btn-balcao-desfazer');
+const balcaoFiltrosCat = document.getElementById('balcao-filtros-cat');
+const buscaBalcaoInput = document.getElementById('busca-balcao');
+const btnLimparBuscaBalcao = document.getElementById('btn-limpar-busca-balcao');
+const balcaoDicaMobile = document.getElementById('balcao-dica-mobile');
+const balcaoUltimo = document.getElementById('balcao-ultimo');
+const seletorModoEl = document.querySelector('.seletor-modo');
 
 const modoBalcaoLigado = () => estado.loja?.modoBalcao === true;
+const balcaoEmCelular = () => window.matchMedia('(max-width: 900px)').matches;
+
+function atualizarAlturaResumoBalcao() {
+  if (!balcaoEmCelular() || resumoBalcao.hidden || telaBalcao.hidden) {
+    telaBalcao.style.removeProperty('--balcao-resumo-h');
+    return;
+  }
+  const h = Math.ceil(resumoBalcao.getBoundingClientRect().height);
+  if (h > 0) telaBalcao.style.setProperty('--balcao-resumo-h', `${h}px`);
+}
 
 function aplicarModoBalcao() {
   const ligado = modoBalcaoLigado();
@@ -1409,8 +1430,17 @@ function aplicarModoBalcao() {
   resumoBalcao.hidden = !ligado;
   document.body.classList.toggle('modo-balcao-ativo', ligado && estado.telaAtiva === 'pedidos');
   if (ligado) {
-    if (!gradeBalcao.childElementCount) renderizarGradeBalcao();
-    requestAnimationFrame(ajustarGradeBalcao);
+    const ehMobile = balcaoEmCelular();
+    if (!gradeBalcao.childElementCount || estado.balcaoModoMobile !== ehMobile) {
+      renderizarGradeBalcao();
+    }
+    requestAnimationFrame(() => {
+      atualizarAlturaResumoBalcao();
+      ajustarGradeBalcao();
+    });
+  } else {
+    telaBalcao.style.height = '';
+    telaBalcao.style.removeProperty('--balcao-resumo-h');
   }
 }
 
@@ -1424,29 +1454,114 @@ function itensDoBalcao() {
       Number(a.ordem || 0) - Number(b.ordem || 0));
 }
 
+function gruposBalcao(itens) {
+  const mapaCat = new Map(estado.categorias.map((c) => [c.id, c]));
+  const porCat = new Map();
+  for (const it of itens) {
+    const id = mapaCat.has(it.categoria) ? it.categoria : '__outros__';
+    if (!porCat.has(id)) porCat.set(id, []);
+    porCat.get(id).push(it);
+  }
+  const grupos = [];
+  for (const c of estado.categorias) {
+    const lista = porCat.get(c.id);
+    if (lista?.length) grupos.push({ id: c.id, nome: c.nome || c.id, cor: c.cor || '#F28BAA', itens: lista });
+  }
+  const outros = porCat.get('__outros__');
+  if (outros?.length) grupos.push({ id: '__outros__', nome: 'Outros', cor: '#F28BAA', itens: outros });
+  return grupos;
+}
+
+function htmlPecaBalcao(it, cor, vezes) {
+  const mostrarGrupo = vezes.get(normalizar(it.nome)) > 1 && it.grupo;
+  const nomeComp = it.nome + (mostrarGrupo ? ` (${it.grupo})` : '');
+  const grupo = mostrarGrupo ? ` <small class="peca-balcao__grupo">${esc(it.grupo)}</small>` : '';
+  return `<button type="button" class="peca-balcao" data-lancar="${esc(it.id)}" data-nome="${esc(nomeComp)}" style="--c:${esc(cor)}" aria-label="Lançar ${esc(nomeComp)}, ${esc(brl(it.preco))}">
+    <span class="peca-balcao__nome">${esc(it.nome)}${grupo}</span>
+    <span class="peca-balcao__resta" data-resta="${esc(it.id)}" hidden></span>
+    <span class="peca-balcao__rodape">
+      <span class="peca-balcao__preco">${esc(brl(it.preco))}</span>
+      <span class="peca-balcao__lancar" aria-hidden="true" data-confirmado="Lançado ✓" data-confirmado-cel="✓ +1">Lançar</span>
+    </span>
+  </button>`;
+}
+
+function renderizarFiltrosBalcao(grupos, totalItens) {
+  if (!balcaoFiltrosCat) return;
+  if (estado.balcaoCategoria !== 'todos' && !grupos.some((g) => g.id === estado.balcaoCategoria)) {
+    estado.balcaoCategoria = 'todos';
+  }
+  const scrollX = balcaoFiltrosCat.scrollLeft;
+  const botoes = [
+    `<button type="button" class="balcao-filtro-cat${estado.balcaoCategoria === 'todos' ? ' ativo' : ''}" data-balcao-cat="todos" style="--c:#F28BAA"><span>Todos</span><b>${totalItens}</b></button>`,
+    ...grupos.map((g) => `<button type="button" class="balcao-filtro-cat${estado.balcaoCategoria === g.id ? ' ativo' : ''}" data-balcao-cat="${esc(g.id)}" style="--c:${esc(g.cor)}"><i></i><span>${esc(g.nome)}</span><b>${g.itens.length}</b></button>`),
+  ];
+  balcaoFiltrosCat.innerHTML = botoes.join('');
+  balcaoFiltrosCat.scrollLeft = scrollX;
+}
+
 function renderizarGradeBalcao() {
   if (!modoBalcaoLigado()) { gradeBalcao.innerHTML = ''; return; }
   const itens = itensDoBalcao();
   const corCat = new Map(estado.categorias.map((c) => [c.id, c.cor || '#F28BAA']));
+  const nomeCat = new Map(estado.categorias.map((c) => [c.id, c.nome || '']));
   // nome repetido (Brahma litrão × 600 ml): mostra o grupo para não confundir
   const vezes = new Map();
-  for (const it of itens) vezes.set(it.nome, (vezes.get(it.nome) || 0) + 1);
+  for (const it of itens) {
+    const chave = normalizar(it.nome);
+    vezes.set(chave, (vezes.get(chave) || 0) + 1);
+  }
 
-  gradeBalcao.innerHTML = itens.length
-    ? itens.map((it) => {
-      const grupo = vezes.get(it.nome) > 1 && it.grupo ? ` <small class="peca-balcao__grupo">${esc(it.grupo)}</small>` : '';
-      return `<button type="button" class="peca-balcao" data-lancar="${esc(it.id)}" data-nome="${esc(it.nome + (grupo ? ` (${it.grupo})` : ''))}" style="--c:${esc(corCat.get(it.categoria) || '#F28BAA')}" aria-label="Lançar ${esc(it.nome)}${grupo ? ' ' + esc(it.grupo) : ''}, ${esc(brl(it.preco))}">
-        <span class="peca-balcao__nome">${esc(it.nome)}${grupo}</span>
-        <span class="peca-balcao__resta" data-resta="${esc(it.id)}" hidden></span>
-        <span class="peca-balcao__rodape">
-          <span class="peca-balcao__preco">${esc(brl(it.preco))}</span>
-          <span class="peca-balcao__lancar">Lançar</span>
-        </span>
-      </button>`;
-    }).join('')
-    : '<div class="estado-vazio">Nenhum produto disponível. Confira o cardápio (itens ativos e não esgotados).</div>';
+  const ehMobile = balcaoEmCelular();
+  estado.balcaoModoMobile = ehMobile;
+  gradeBalcao.classList.toggle('grade-balcao--mobile', ehMobile);
+
+  if (!ehMobile) {
+    gradeBalcao.innerHTML = itens.length
+      ? itens.map((it) => htmlPecaBalcao(it, corCat.get(it.categoria) || '#F28BAA', vezes)).join('')
+      : '<div class="estado-vazio">Nenhum produto disponível. Confira o cardápio (itens ativos e não esgotados).</div>';
+    atualizarRestamBalcao();
+    ajustarGradeBalcao();
+    return;
+  }
+
+  telaBalcao.style.height = '';
+  gradeBalcao.style.removeProperty('--gap');
+  gradeBalcao.style.removeProperty('--fonte');
+  gradeBalcao.classList.remove('grade-balcao--apertada');
+
+  const todosGrupos = gruposBalcao(itens);
+  renderizarFiltrosBalcao(todosGrupos, itens.length);
+
+  if (!itens.length) {
+    gradeBalcao.innerHTML = '<div class="estado-vazio">Nenhum produto disponível. Confira o cardápio (itens ativos e não esgotados).</div>';
+    atualizarAlturaResumoBalcao();
+    return;
+  }
+
+  const termo = normalizar(estado.balcaoBusca);
+  let filtrados = itens;
+  if (termo) {
+    filtrados = itens.filter((it) => normalizar(`${it.nome} ${it.grupo || ''} ${nomeCat.get(it.categoria) || ''}`).includes(termo));
+  } else if (estado.balcaoCategoria !== 'todos') {
+    filtrados = itens.filter((it) => it.categoria === estado.balcaoCategoria);
+  }
+
+  if (!filtrados.length) {
+    gradeBalcao.innerHTML = `<div class="estado-vazio balcao-vazio"><p>Nenhum produto encontrado para “${esc(estado.balcaoBusca.trim())}”.</p><button type="button" class="btn btn-secundario btn-compacto" data-limpar-busca-balcao>Limpar busca</button></div>`;
+    atualizarAlturaResumoBalcao();
+    return;
+  }
+
+  const gruposVisiveis = gruposBalcao(filtrados);
+  const mostrarCab = termo || estado.balcaoCategoria === 'todos' || gruposVisiveis.length > 1;
+  gradeBalcao.innerHTML = gruposVisiveis.map((g) => `<section class="balcao-secao">
+    ${mostrarCab ? `<header class="balcao-secao__cab" style="--c:${esc(g.cor)}"><span class="balcao-secao__cor" aria-hidden="true"></span><h2 class="balcao-secao__titulo">${esc(g.nome)}</h2><span class="balcao-secao__qtd">${g.itens.length} ${g.itens.length === 1 ? 'item' : 'itens'}</span></header>` : ''}
+    <div class="balcao-secao__grid">${g.itens.map((it) => htmlPecaBalcao(it, g.cor, vezes)).join('')}</div>
+  </section>`).join('');
+
   atualizarRestamBalcao();
-  ajustarGradeBalcao();
+  atualizarAlturaResumoBalcao();
 }
 
 // Quando o estoque de um produto está no fim, o botão avisa quantos ainda dá para vender.
@@ -1461,10 +1576,19 @@ function atualizarRestamBalcao() {
   });
 }
 
-// Escolhe colunas × linhas para o maior botão possível sem rolar; a última linha estica
-// (nada de buraco na grade).
+// No PC, escolhe colunas × linhas para o maior botão possível sem rolar; a última linha estica.
 function ajustarGradeBalcao() {
   if (telaBalcao.hidden || telaPedidos.hidden) return;
+  const ehMobile = balcaoEmCelular();
+  if (estado.balcaoModoMobile !== ehMobile) {
+    renderizarGradeBalcao();
+    return;
+  }
+  if (ehMobile) {
+    telaBalcao.style.height = '';
+    atualizarAlturaResumoBalcao();
+    return;
+  }
   const pecas = [...gradeBalcao.querySelectorAll('.peca-balcao')];
   const n = pecas.length;
   if (!n) return;
@@ -1514,9 +1638,55 @@ const pedirAjuste = () => { cancelAnimationFrame(esperaAjuste); esperaAjuste = r
 window.addEventListener('resize', pedirAjuste);
 if ('ResizeObserver' in window) {
   new ResizeObserver(pedirAjuste).observe(document.querySelector('.barra-topo-pedidos'));
+  new ResizeObserver(atualizarAlturaResumoBalcao).observe(resumoBalcao);
 }
 
+function rolarInicioBalcaoCelular() {
+  if (!balcaoEmCelular() || !seletorModoEl) return;
+  const destino = Math.max(0, Math.round(seletorModoEl.getBoundingClientRect().bottom + window.scrollY + 8));
+  if (window.scrollY > destino) window.scrollTo(0, destino);
+}
+
+function limparBuscaBalcao() {
+  estado.balcaoBusca = '';
+  if (buscaBalcaoInput) buscaBalcaoInput.value = '';
+  if (btnLimparBuscaBalcao) btnLimparBuscaBalcao.hidden = true;
+  renderizarGradeBalcao();
+}
+
+buscaBalcaoInput?.addEventListener('input', () => {
+  const val = buscaBalcaoInput.value;
+  estado.balcaoBusca = val;
+  if (btnLimparBuscaBalcao) btnLimparBuscaBalcao.hidden = !val;
+  if (val.trim()) estado.balcaoCategoria = 'todos';
+  renderizarGradeBalcao();
+  rolarInicioBalcaoCelular();
+});
+
+btnLimparBuscaBalcao?.addEventListener('click', () => {
+  limparBuscaBalcao();
+  buscaBalcaoInput?.focus();
+});
+
+balcaoFiltrosCat?.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-balcao-cat]');
+  if (!btn) return;
+  estado.balcaoCategoria = btn.getAttribute('data-balcao-cat') || 'todos';
+  if (estado.balcaoBusca) {
+    estado.balcaoBusca = '';
+    if (buscaBalcaoInput) buscaBalcaoInput.value = '';
+    if (btnLimparBuscaBalcao) btnLimparBuscaBalcao.hidden = true;
+  }
+  renderizarGradeBalcao();
+  balcaoFiltrosCat.querySelector('.balcao-filtro-cat.ativo')?.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+  rolarInicioBalcaoCelular();
+});
+
 gradeBalcao.addEventListener('click', (e) => {
+  if (e.target.closest('[data-limpar-busca-balcao]')) {
+    limparBuscaBalcao();
+    return;
+  }
   const peca = e.target.closest('[data-lancar]');
   if (!peca) return;
   lancarNoBalcao(peca.getAttribute('data-lancar'), peca);
@@ -1562,11 +1732,25 @@ function lancarNoBalcao(id, peca) {
 
 function piscarPeca(peca, classe) {
   if (!peca) return;
+  const acaoEl = peca.querySelector('.peca-balcao__lancar');
+  if (classe === 'lancado') {
+    const cont = Number(peca.dataset.streak || 0) + 1;
+    peca.dataset.streak = String(cont);
+    if (acaoEl) {
+      acaoEl.setAttribute('data-confirmado', cont > 1 ? `Lançado ${cont}× ✓` : 'Lançado ✓');
+      acaoEl.setAttribute('data-confirmado-cel', cont > 1 ? `✓ +${cont}` : '✓ +1');
+    }
+  } else {
+    delete peca.dataset.streak;
+  }
   peca.classList.remove('lancado', 'falhou');
   void peca.offsetWidth;
   peca.classList.add(classe);
   clearTimeout(peca._tempo);
-  peca._tempo = setTimeout(() => peca.classList.remove(classe), 900);
+  peca._tempo = setTimeout(() => {
+    peca.classList.remove(classe);
+    delete peca.dataset.streak;
+  }, 1300);
 }
 
 function atualizarResumoBalcao() {
@@ -1583,7 +1767,8 @@ function atualizarResumoBalcao() {
 
   const ultimo = estado.balcaoLancados[estado.balcaoLancados.length - 1];
   // "Voltar" fica sempre à vista; apagado quando não há o que desfazer nesta tela
-  document.getElementById('balcao-ultimo').hidden = !ultimo;
+  if (balcaoUltimo) balcaoUltimo.hidden = !ultimo;
+  if (balcaoDicaMobile) balcaoDicaMobile.hidden = Boolean(ultimo);
   btnBalcaoDesfazer.disabled = !ultimo;
   btnBalcaoDesfazer.title = ultimo
     ? `Voltar: desfaz ${ultimo.nome} (${brl(ultimo.preco)})`
@@ -1591,6 +1776,7 @@ function atualizarResumoBalcao() {
   if (ultimo) {
     document.getElementById('balcao-ultimo-texto').textContent = `${ultimo.nome} · ${brl(ultimo.preco)}`;
   }
+  atualizarAlturaResumoBalcao();
 }
 
 btnBalcaoDesfazer.addEventListener('click', async () => {
@@ -2387,7 +2573,6 @@ containerCategorias.addEventListener('submit', async (e) => {
 // gastam de cada um (receita). A tela mostra primeiro o que acabou e o que está acabando.
 const listaEstoque = document.getElementById('lista-estoque');
 const buscaEstoqueInput = document.getElementById('busca-estoque');
-const normalizar = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 const ORDEM_SIT = { zerado: 0, baixo: 1, ok: 2 };
 const ROTULO_SIT = { zerado: 'Acabou', baixo: 'Acabando', ok: 'Ok' };
 const ICONE_EDITAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
