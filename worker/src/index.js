@@ -230,6 +230,10 @@ async function atenderRequisicao(request, env, ctx) {
         .prepare('SELECT id, tipo, spotify_id, nome, motivo, criado_em FROM bloqueios ORDER BY criado_em DESC LIMIT 200')
         .all();
 
+      const clientesBloqRes = await env.DB
+        .prepare('SELECT id, aparelho_id, nome, dispositivo, musica_motivo, criado_em FROM clientes_bloqueados ORDER BY criado_em DESC LIMIT 100')
+        .all();
+
       const aguardando = await env.DB
         .prepare(
           `SELECT id, track_id, nome, artistas, artista_principal_id, album, capa, duracao_ms, pedido_por, criado_em
@@ -318,6 +322,14 @@ async function atenderRequisicao(request, env, ctx) {
             nome: b.nome,
             motivo: b.motivo,
             criadoEm: b.criado_em,
+          })),
+          clientesBloqueados: (clientesBloqRes.results || []).map((c) => ({
+            id: c.id,
+            aparelhoId: c.aparelho_id,
+            nome: c.nome,
+            dispositivo: c.dispositivo,
+            musicaMotivo: c.musica_motivo,
+            criadoEm: c.criado_em,
           })),
           logs,
           historico: logs.filter((h) => h.noite === cfg.noiteAtual && (h.status === 'tocando' || h.status === 'tocada')).slice(0, 15),
@@ -516,6 +528,51 @@ async function atenderRequisicao(request, env, ctx) {
           .bind(spotifyId)
           .run();
       }
+      return jsonResp({ ok: true }, 200, request, env);
+    }
+
+    // POST /adm/bloquear-cliente — bloqueia o aparelho que pediu uma música (via id da tabela fila)
+    if (method === 'POST' && path === '/adm/bloquear-cliente') {
+      const b = await lerJson(request);
+      const filaId = String(b.filaId || '').trim();
+      if (!filaId) return jsonResp({ erro: 'Pedido não informado.' }, 400, request, env);
+
+      const item = await env.DB
+        .prepare('SELECT id, cliente_hash, pedido_por, dispositivo, nome, artistas FROM fila WHERE id = ?')
+        .bind(filaId)
+        .first();
+      if (!item || !item.cliente_hash) {
+        return jsonResp({ erro: 'Não foi possível identificar o aparelho desse pedido.' }, 404, request, env);
+      }
+
+      const aparelhoId = String(item.cliente_hash).slice(0, 6).toUpperCase();
+      const musicaMotivo = `${item.nome} — ${item.artistas}`.slice(0, 120);
+      await env.DB
+        .prepare(
+          `INSERT INTO clientes_bloqueados (id, cliente_hash, aparelho_id, nome, dispositivo, musica_motivo, criado_em)
+           VALUES (?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(cliente_hash) DO UPDATE SET
+             nome = excluded.nome,
+             dispositivo = excluded.dispositivo,
+             musica_motivo = excluded.musica_motivo,
+             criado_em = excluded.criado_em`
+        )
+        .bind(idAleatorio(8), item.cliente_hash, aparelhoId, item.pedido_por || 'Anônimo', item.dispositivo || '', musicaMotivo, Date.now())
+        .run();
+
+      // Remove pedidos pendentes/aguardando desse aparelho da fila atual.
+      await env.DB
+        .prepare("UPDATE fila SET status = 'removida' WHERE status IN ('pendente', 'aguardando') AND cliente_hash = ?")
+        .bind(item.cliente_hash)
+        .run();
+
+      return jsonResp({ ok: true, aparelhoId }, 200, request, env);
+    }
+
+    // DELETE /adm/clientes-bloqueados/:id — desbloqueia um aparelho
+    const matchCliBloq = path.match(/^\/adm\/clientes-bloqueados\/([A-Za-z0-9_-]+)$/);
+    if (method === 'DELETE' && matchCliBloq) {
+      await env.DB.prepare('DELETE FROM clientes_bloqueados WHERE id = ?').bind(matchCliBloq[1]).run();
       return jsonResp({ ok: true }, 200, request, env);
     }
 

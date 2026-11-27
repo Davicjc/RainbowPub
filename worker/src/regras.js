@@ -481,9 +481,17 @@ export async function montarEstadoPublico(env, clienteHash, { forcar = false } =
     .bind(cfg.noiteAtual)
     .all();
 
-  // Cooldown restante para este cliente
+  // Cooldown restante e verificação se este aparelho foi bloqueado pela equipe
   let cooldownRestanteSeg = 0;
-  if (clienteHash && cfg.cooldownMin > 0) {
+  let clienteBloqueado = false;
+  if (clienteHash) {
+    const bloqCli = await db
+      .prepare('SELECT 1 FROM clientes_bloqueados WHERE cliente_hash = ? LIMIT 1')
+      .bind(clienteHash)
+      .first();
+    clienteBloqueado = Boolean(bloqCli);
+  }
+  if (!clienteBloqueado && clienteHash && cfg.cooldownMin > 0) {
     const ultimo = await db
       .prepare(
         `SELECT criado_em FROM fila
@@ -551,6 +559,7 @@ export async function montarEstadoPublico(env, clienteHash, { forcar = false } =
     noiteAtual: cfg.noiteAtual,
     proximoResetEm: proximoReset12hBRT(),
     cooldownRestanteSeg,
+    clienteBloqueado,
     tocandoAgora: sync.nowPlaying,
     fila: filaFormatada,
     proximasSpotify,
@@ -653,6 +662,21 @@ export async function processarPedidoMusica(env, { trackId, pedidoPor, geo, clie
 
   if (!cfg.ativo) {
     return { ok: false, status: 403, erro: 'Os pedidos de música estão pausados agora.' };
+  }
+
+  // Verifica se este aparelho foi bloqueado pela equipe
+  if (cliente?.clienteHash) {
+    const bloqCli = await db
+      .prepare('SELECT 1 FROM clientes_bloqueados WHERE cliente_hash = ? LIMIT 1')
+      .bind(cliente.clienteHash)
+      .first();
+    if (bloqCli) {
+      return {
+        ok: false,
+        status: 403,
+        erro: 'Você foi bloqueado de escolher músicas. Entenda o motivo no balcão.',
+      };
+    }
   }
 
   const auth = await obterAuthSalva(db);

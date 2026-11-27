@@ -276,10 +276,11 @@ function renderizarTelaMusica() {
               <span class="musica-crono" data-crono-fila="${idx}"></span>
             </div>
           </div>
-          <div class="musica-item-acoes">
+          <div class="musica-item-acoes musica-item-acoes--4">
             <button type="button" class="btn btn-secundario btn-compacto" data-rem-fila="${esc(item.id)}" data-bloq="">Remover</button>
             <button type="button" class="btn btn-perigo btn-compacto" data-rem-fila="${esc(item.id)}" data-bloq="track" title="Remover e bloquear esta música">Bloq. música</button>
             <button type="button" class="btn btn-perigo btn-compacto" data-rem-fila="${esc(item.id)}" data-bloq="artist" title="Remover e bloquear este artista">Bloq. artista</button>
+            <button type="button" class="btn btn-perigo btn-compacto" data-bloq-cliente="${esc(item.id)}" data-bloq-cliente-nome="${esc(item.pedidoPor || 'essa pessoa')}">Bloquear quem pediu</button>
           </div>
         </div>`;
       })
@@ -287,6 +288,9 @@ function renderizarTelaMusica() {
 
     listaFila.querySelectorAll('[data-rem-fila]').forEach((btn) => {
       btn.addEventListener('click', () => removerDaFila(btn.dataset.remFila, btn.dataset.bloq));
+    });
+    listaFila.querySelectorAll('[data-bloq-cliente]').forEach((btn) => {
+      btn.addEventListener('click', () => bloquearQuemPediu(btn.dataset.bloqCliente, btn.dataset.bloqClienteNome));
     });
   }
   atualizarCronometros();
@@ -320,7 +324,33 @@ function renderizarTelaMusica() {
     destacarAtalhoDuracao(cfg.maxDuracaoSeg ?? 240);
   }
 
-  // 7. Lista de bloqueios
+  // 7. Lista de bloqueios (pessoas/aparelhos + músicas/artistas)
+  const cliBloqs = d.clientesBloqueados || [];
+  const listaCliBloq = $('musica-lista-clientes-bloq');
+  if (listaCliBloq) {
+    if (!cliBloqs.length) {
+      listaCliBloq.innerHTML = '<p class="estado-vazio">Nenhuma pessoa bloqueada.</p>';
+    } else {
+      listaCliBloq.innerHTML = cliBloqs
+        .map(
+          (c) => `<div class="musica-bloq-item">
+            <div class="musica-bloq-cli">
+              <div>
+                <span class="musica-chip musica-chip--erro">#${esc(c.aparelhoId || '------')}</span>
+                <strong>${esc(c.nome || 'Anônimo')}</strong>
+              </div>
+              <small>${esc([c.dispositivo, c.musicaMotivo].filter(Boolean).join(' · '))}</small>
+            </div>
+            <button type="button" class="btn btn-fantasma btn-compacto" data-desbloq-cli="${esc(c.id)}">Desbloquear</button>
+          </div>`
+        )
+        .join('');
+      listaCliBloq.querySelectorAll('[data-desbloq-cli]').forEach((btn) => {
+        btn.addEventListener('click', () => desbloquearCliente(btn.dataset.desbloqCli));
+      });
+    }
+  }
+
   const bloqs = d.bloqueios || [];
   const listaBloq = $('musica-lista-bloqueios');
   if (!bloqs.length) {
@@ -413,9 +443,10 @@ function renderizarLogsMusica() {
             ${detalhes.length ? `<span class="musica-log-device">${esc(detalhes.join(' · '))}</span>` : ''}
           </div>
         </div>
-        <div class="musica-item-acoes musica-item-acoes--2">
+        <div class="musica-item-acoes musica-item-acoes--log">
           <button type="button" class="btn btn-fantasma btn-compacto" data-bloq-log-tipo="track" data-bloq-log-id="${esc(item.trackId)}" data-bloq-log-nome="${esc(`${item.nome} — ${item.artistas}`)}">Bloq. música</button>
           ${item.artistaPrincipalId ? `<button type="button" class="btn btn-fantasma btn-compacto" data-bloq-log-tipo="artist" data-bloq-log-id="${esc(item.artistaPrincipalId)}" data-bloq-log-nome="${esc(primeiroArtista)}">Bloq. artista</button>` : ''}
+          <button type="button" class="btn btn-perigo btn-compacto musica-btn-bloq-pessoa" data-bloq-cliente="${esc(item.id)}" data-bloq-cliente-nome="${esc(item.pedidoPor || 'essa pessoa')}">Bloquear quem pediu</button>
         </div>
       </article>`;
     })
@@ -426,6 +457,39 @@ function renderizarLogsMusica() {
       bloquearDoLog(btn.dataset.bloqLogTipo, btn.dataset.bloqLogId, btn.dataset.bloqLogNome)
     );
   });
+  el.querySelectorAll('[data-bloq-cliente]').forEach((btn) => {
+    btn.addEventListener('click', () => bloquearQuemPediu(btn.dataset.bloqCliente, btn.dataset.bloqClienteNome));
+  });
+}
+
+async function bloquearQuemPediu(filaId, nomePessoa) {
+  const ok = await ctxAdm.confirmarAcao({
+    titulo: 'Bloquear quem pediu essa música',
+    mensagem: `Bloquear o aparelho de "${nomePessoa}"? Os pedidos pendentes dessa pessoa serão removidos e na tela dela aparecerá "Você foi bloqueado · entenda no balcão".`,
+    textoConfirmar: 'Bloquear quem pediu',
+    perigo: true,
+  });
+  if (!ok) return;
+  try {
+    const res = await apiAdm('/adm/bloquear-cliente', {
+      method: 'POST',
+      body: JSON.stringify({ filaId }),
+    });
+    ctxAdm?.mostrarToast?.(`Aparelho #${res.aparelhoId || ''} bloqueado.`, 'sucesso');
+    await carregarEstadoMusica({ silencioso: true });
+  } catch (err) {
+    ctxAdm?.mostrarToast?.(err.message || 'Erro ao bloquear aparelho.', 'erro');
+  }
+}
+
+async function desbloquearCliente(id) {
+  try {
+    await apiAdm(`/adm/clientes-bloqueados/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    ctxAdm?.mostrarToast?.('Pessoa desbloqueada.', 'sucesso');
+    await carregarEstadoMusica({ silencioso: true });
+  } catch (err) {
+    ctxAdm?.mostrarToast?.(err.message || 'Erro ao desbloquear.', 'erro');
+  }
 }
 
 async function bloquearDoLog(tipo, spotifyId, nome) {

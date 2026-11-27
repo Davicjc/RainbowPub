@@ -79,6 +79,17 @@ CREATE TABLE IF NOT EXISTS bloqueios (
   UNIQUE (tipo, spotify_id)
 );
 
+-- Aparelhos/pessoas bloqueados de pedir música ("Você foi bloqueado · entenda no balcão").
+CREATE TABLE IF NOT EXISTS clientes_bloqueados (
+  id TEXT PRIMARY KEY,
+  cliente_hash TEXT NOT NULL UNIQUE,
+  aparelho_id TEXT NOT NULL DEFAULT '',
+  nome TEXT NOT NULL DEFAULT '',
+  dispositivo TEXT NOT NULL DEFAULT '',
+  musica_motivo TEXT NOT NULL DEFAULT '',
+  criado_em INTEGER NOT NULL
+);
+
 -- Catálogo sincronizado das playlists escolhidas pela Carol (modo 'playlists').
 CREATE TABLE IF NOT EXISTS catalogo_faixas (
   track_id TEXT PRIMARY KEY,

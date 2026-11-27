@@ -162,18 +162,26 @@ function renderizarStatus() {
   const d = estado.dados;
   if (!d) return;
 
-  const ligado = d.conectado && d.ativo;
+  const bloqueado = Boolean(d.clienteBloqueado);
+  const ligado = d.conectado && d.ativo && !bloqueado;
   $('#statusSom').classList.toggle('ligado', ligado);
-  $('#statusSomTexto').textContent = !d.conectado
-    ? 'Desconectado'
-    : !d.ativo
-      ? 'Pausado'
-      : d.controle === 'aprovacao'
-        ? 'Com aprovação'
-        : 'Liberado';
+  $('#statusSomTexto').textContent = bloqueado
+    ? 'Bloqueado'
+    : !d.conectado
+      ? 'Desconectado'
+      : !d.ativo
+        ? 'Pausado'
+        : d.controle === 'aprovacao'
+          ? 'Com aprovação'
+          : 'Liberado';
 
   const aviso = $('#avisoMusica');
-  if (!d.conectado) {
+  aviso.classList.toggle('aviso-musica--bloqueado', bloqueado);
+  if (bloqueado) {
+    aviso.hidden = false;
+    $('#avisoMusicaTitulo').textContent = 'Você foi bloqueado';
+    $('#avisoMusicaTexto').textContent = 'Seu acesso para escolher músicas foi bloqueado. Entenda o motivo no balcão.';
+  } else if (!d.conectado) {
     aviso.hidden = false;
     $('#avisoMusicaTitulo').textContent = 'Jukebox desligada';
     $('#avisoMusicaTexto').textContent = 'O som ainda não está conectado ao site hoje.';
@@ -261,7 +269,7 @@ function renderizarCooldown() {
   const rel = $('#avisoCooldownRelogio');
   const sub = $('#avisoCooldownSub');
   const minCfg = estado.dados?.regras?.cooldownMin || 5;
-  const ligado = Boolean(estado.dados?.conectado && estado.dados?.ativo);
+  const ligado = Boolean(estado.dados?.conectado && estado.dados?.ativo && !estado.dados?.clienteBloqueado);
   const emEspera = ligado && estado.cooldownRestante > 0;
   if (emEspera) {
     el.hidden = false;

@@ -86,6 +86,13 @@
   color: var(--texto-2);
   font-size: 16px;
 }
+.aviso-musica--bloqueado {
+  background: var(--erro-fundo);
+  border-color: rgba(255, 180, 195, 0.45);
+  border-left-color: #e5484d;
+}
+.aviso-musica--bloqueado h2 { color: #fff; }
+.aviso-musica--bloqueado p { color: var(--erro); }
 
 /* Cartão Tocando Agora */
 .cartao-agora {
