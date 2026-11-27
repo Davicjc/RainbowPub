@@ -366,42 +366,47 @@
 
       <!-- 2.c TELA DE MÚSICA (Spotify / Jukebox dos clientes) -->
       <section id="tela-musica" class="secao-painel" hidden>
-        <div class="cabecalho-secao">
+        <div class="cabecalho-secao cabecalho-musica">
           <div>
             <h1>Música &amp; Spotify</h1>
-            <p class="texto-apoio">Controle a fila dos clientes, conecte o Spotify da casa e evite zoeira no som.</p>
+            <p class="texto-apoio" id="musica-sub-topo">Fila ao vivo dos clientes e controle do som da casa.</p>
           </div>
-          <div class="acoes-cabecalho">
+          <div class="acoes-cabecalho acoes-cabecalho--musica">
             <a href="../musica/" target="_blank" rel="noopener noreferrer" class="btn btn-secundario">
-              <span>Ver página pública</span>
+              <span>Abrir /musica/</span>
             </a>
             <button type="button" id="btn-musica-atualizar" class="btn btn-secundario">Atualizar</button>
           </div>
         </div>
 
-        <div class="pilha-blocos">
-          <!-- Conexão + Interruptor Ligado/Desligado -->
-          <div class="cartao-painel pilha-blocos">
-            <div class="cabecalho-subbloco-linha">
-              <div class="musica-status-linha" id="musica-status-conexao">
-                <span class="musica-chip">Carregando…</span>
-              </div>
-              <div class="acoes-cabecalho">
-                <button type="button" id="btn-spotify-conectar" class="btn btn-principal">Conectar Spotify da Carol</button>
-                <button type="button" id="btn-spotify-desconectar" class="btn btn-fantasma" hidden>Desconectar</button>
-              </div>
-            </div>
+        <!-- Sub-abas da tela Música: Ao vivo | Log | Ajustes -->
+        <div class="subnav-ajustes subnav-musica" role="tablist" aria-label="Seções de música">
+          <button type="button" class="subnav-ajustes__aba ativa" data-musica-sub="aovivo" role="tab" aria-selected="true">
+            <span>Ao vivo</span>
+            <span class="subnav-badge" id="badge-sub-fila" hidden>0</span>
+          </button>
+          <button type="button" class="subnav-ajustes__aba" data-musica-sub="log" role="tab" aria-selected="false">
+            <span>Log</span>
+            <span class="subnav-badge" id="badge-sub-log" hidden>0</span>
+          </button>
+          <button type="button" class="subnav-ajustes__aba" data-musica-sub="ajustes" role="tab" aria-selected="false">
+            <span>Ajustes</span>
+          </button>
+        </div>
 
-            <p id="musica-aviso-credenciais" class="texto-apoio" hidden>
-              Falta configurar os secrets <code>SPOTIFY_CLIENT_ID</code> e <code>SPOTIFY_CLIENT_SECRET</code> no Cloudflare Worker.
-            </p>
+        <!-- Faixa compacta de aviso quando Spotify desconectado (aparece em qualquer sub-aba) -->
+        <div id="musica-faixa-desconectado" class="faixa-alerta-vermelha" hidden role="status">
+          <span>Spotify da casa desconectado. Vá em <strong>Ajustes</strong> para conectar.</span>
+        </div>
 
-            <div class="separador-bloco sem-margem"></div>
-
+        <!-- SUB-ABA 1: AO VIVO (operação da noite) -->
+        <div class="pilha-blocos" data-musica-painel="aovivo">
+          <!-- Controles rápidos -->
+          <div class="cartao-painel pilha-blocos musica-card-compacto">
             <div class="musica-controles-grid">
               <div>
                 <h2 class="subtitulo-bloco">Controle dos clientes</h2>
-                <div class="seletor-modo" role="radiogroup" aria-label="Pedidos de música dos clientes">
+                <div class="seletor-modo seletor-modo--3" role="radiogroup" aria-label="Pedidos de música dos clientes">
                   <button type="button" class="seletor-modo__op" role="radio" aria-checked="false" data-musica-controle="liberado" data-modo-loja="recebendo">
                     <span class="seletor-modo__ponto" aria-hidden="true"></span>
                     <span class="seletor-modo__txt">
@@ -412,7 +417,7 @@
                   <button type="button" class="seletor-modo__op" role="radio" aria-checked="false" data-musica-controle="aprovacao" data-modo-loja="balcao">
                     <span class="seletor-modo__ponto" aria-hidden="true"></span>
                     <span class="seletor-modo__txt">
-                      <strong>Com aprovação</strong>
+                      <strong><span class="so-pc">Com aprovação</span><span class="so-cel">Aprovação</span></strong>
                       <small>Casa aprova antes</small>
                     </span>
                   </button>
@@ -427,7 +432,7 @@
               </div>
 
               <div>
-                <h2 class="subtitulo-bloco">O que o cliente pode escolher</h2>
+                <h2 class="subtitulo-bloco">O que o cliente escolhe</h2>
                 <div class="seletor-modo seletor-modo--2" role="radiogroup" aria-label="Modo do catálogo">
                   <button type="button" class="seletor-modo__op" role="radio" aria-checked="false" data-musica-modo="aberto" data-modo-loja="balcao">
                     <span class="seletor-modo__ponto" aria-hidden="true"></span>
@@ -439,15 +444,14 @@
                   <button type="button" class="seletor-modo__op" role="radio" aria-checked="false" data-musica-modo="playlists" data-modo-loja="recebendo">
                     <span class="seletor-modo__ponto" aria-hidden="true"></span>
                     <span class="seletor-modo__txt">
-                      <strong>Só playlists da casa</strong>
+                      <strong><span class="so-pc">Só playlists da casa</span><span class="so-cel">Só playlists</span></strong>
                       <small>Só playlists marcadas</small>
                     </span>
                   </button>
                 </div>
               </div>
             </div>
-
-            <p id="musica-info-reset" class="texto-apoio"></p>
+            <p id="musica-info-reset" class="texto-apoio musica-nota-reset"></p>
           </div>
 
           <!-- Tocando agora + Fila da noite -->
@@ -455,11 +459,11 @@
             <div class="cabecalho-subbloco-linha">
               <div>
                 <h2 class="titulo-subbloco sem-margem">Tocando agora &amp; Fila</h2>
-                <p class="texto-apoio">O sistema envia 1 música por vez ao Spotify quando a atual está acabando, então você pode remover qualquer pedido antes.</p>
+                <p class="texto-apoio">A #1 entra na hora no Spotify; as demais ficam aqui para moderar ou zerar às 12h.</p>
               </div>
-              <div class="acoes-cabecalho">
+              <div class="acoes-cabecalho acoes-player-musica">
                 <button type="button" id="btn-musica-pular" class="btn btn-secundario">Pular faixa</button>
-                <button type="button" id="btn-musica-zerar" class="btn btn-perigo">Zerar fila agora</button>
+                <button type="button" id="btn-musica-zerar" class="btn btn-perigo">Zerar fila</button>
               </div>
             </div>
 
@@ -479,26 +483,47 @@
             </div>
             <div id="musica-lista-fila" class="musica-lista-fila"></div>
           </div>
+        </div>
 
-          <!-- Log completo de pedidos de música (com nome + aparelho + detalhes) -->
+        <!-- SUB-ABA 2: LOG COMPLETO -->
+        <div class="pilha-blocos" data-musica-painel="log" hidden>
           <div class="cartao-painel pilha-blocos">
             <div class="cabecalho-subbloco-linha">
               <div>
                 <h2 class="titulo-subbloco sem-margem">Log de pedidos de música</h2>
-                <p class="texto-apoio">Tudo que foi pedido, com nome de quem escolheu, aparelho, distância do bar e status.</p>
+                <p class="texto-apoio">Tudo que foi pedido, com nome, aparelho, distância do bar e status.</p>
               </div>
               <span id="musica-cont-logs" class="texto-apoio">0 registros</span>
             </div>
 
             <div class="musica-log-filtros">
-              <div class="botoes-periodo" role="group" aria-label="Período do log de música">
+              <div class="botoes-periodo botoes-periodo--2" role="group" aria-label="Período do log de música">
                 <button type="button" class="btn-periodo ativo" data-log-periodo="noite">Esta noite</button>
                 <button type="button" class="btn-periodo" data-log-periodo="todos">Últimos 7 dias</button>
               </div>
-              <input type="search" id="busca-musica-logs" class="busca" placeholder="Filtrar por pessoa, música, artista ou aparelho…" autocomplete="off">
+              <input type="search" id="busca-musica-logs" class="busca" placeholder="Filtrar pessoa, música ou aparelho…" autocomplete="off">
             </div>
 
             <div id="musica-lista-logs" class="musica-lista-logs"></div>
+          </div>
+        </div>
+
+        <!-- SUB-ABA 3: AJUSTES (Spotify, playlists, regras, bloqueios, servidor) -->
+        <div class="pilha-blocos" data-musica-painel="ajustes" hidden>
+          <!-- Conexão Spotify -->
+          <div class="cartao-painel pilha-blocos">
+            <div class="cabecalho-subbloco-linha">
+              <div class="musica-status-linha" id="musica-status-conexao">
+                <span class="musica-chip">Carregando…</span>
+              </div>
+              <div class="acoes-cabecalho acoes-spotify-conn">
+                <button type="button" id="btn-spotify-conectar" class="btn btn-principal">Conectar Spotify da Carol</button>
+                <button type="button" id="btn-spotify-desconectar" class="btn btn-fantasma" hidden>Desconectar</button>
+              </div>
+            </div>
+            <p id="musica-aviso-credenciais" class="texto-apoio" hidden>
+              Falta configurar os secrets <code>SPOTIFY_CLIENT_ID</code> e <code>SPOTIFY_CLIENT_SECRET</code> no Cloudflare Worker.
+            </p>
           </div>
 
           <!-- Playlists permitidas -->
@@ -508,7 +533,7 @@
                 <h2 class="titulo-subbloco sem-margem">Playlists da casa</h2>
                 <p id="musica-resumo-playlists" class="texto-apoio"></p>
               </div>
-              <button type="button" id="btn-carregar-playlists" class="btn btn-secundario">Carregar playlists do Spotify</button>
+              <button type="button" id="btn-carregar-playlists" class="btn btn-secundario">Carregar playlists</button>
             </div>
             <div id="musica-seletor-playlists" hidden></div>
           </div>
@@ -516,21 +541,21 @@
           <!-- Regras anti-zoeira -->
           <form id="form-musica-regras" class="cartao-painel pilha-blocos">
             <h2 class="titulo-subbloco sem-margem">Proteção da fila (anti-zoeira)</h2>
-            <div class="grade-campos-2">
+            <div class="grade-campos-2 grade-musica-num">
               <div class="campo">
-                <label for="mus-cooldown">Intervalo por cliente (min)</label>
+                <label for="mus-cooldown">Intervalo/cliente (min)</label>
                 <input type="number" id="mus-cooldown" min="0" max="120" value="15">
               </div>
               <div class="campo">
-                <label for="mus-max-fila">Limite de músicas na fila</label>
+                <label for="mus-max-fila">Limite na fila</label>
                 <input type="number" id="mus-max-fila" min="3" max="50" value="15">
               </div>
               <div class="campo">
-                <label for="mus-max-artista">Máx. do mesmo artista na fila</label>
+                <label for="mus-max-artista">Máx. mesmo artista</label>
                 <input type="number" id="mus-max-artista" min="1" max="5" value="1">
               </div>
               <div class="campo">
-                <label for="mus-rep-horas">Não repetir música por (horas)</label>
+                <label for="mus-rep-horas">Sem repetir (horas)</label>
                 <input type="number" id="mus-rep-horas" min="1" max="12" value="3">
               </div>
             </div>
@@ -541,24 +566,24 @@
               <label class="switch-padrao" for="mus-limitar-duracao">
                 <input type="checkbox" id="mus-limitar-duracao" checked>
                 <span class="trilho-switch"></span>
-                <span><strong>Proibir músicas muito longas ou curtas</strong> (ex.: maiores que 4 min)</span>
+                <span><strong>Proibir músicas longas ou curtas</strong> (ex.: &gt; 4 min)</span>
               </label>
 
               <div id="mus-bloco-duracao" class="musica-bloco-duracao">
+                <span class="texto-apoio">Atalho rápido de duração máxima:</span>
                 <div class="musica-atalhos-dur" role="group" aria-label="Limite rápido de duração máxima">
-                  <span class="texto-apoio">Máximo rápido:</span>
                   <button type="button" class="btn btn-secundario btn-compacto" data-dur-max="240">4 min</button>
                   <button type="button" class="btn btn-secundario btn-compacto" data-dur-max="300">5 min</button>
                   <button type="button" class="btn btn-secundario btn-compacto" data-dur-max="360">6 min</button>
                   <button type="button" class="btn btn-secundario btn-compacto" data-dur-max="480">8 min</button>
                 </div>
-                <div class="grade-campos-2">
+                <div class="grade-campos-2 grade-musica-num">
                   <div class="campo">
-                    <label for="mus-max-dur-min">Duração máxima permitida (minutos)</label>
+                    <label for="mus-max-dur-min">Máximo (min)</label>
                     <input type="number" id="mus-max-dur-min" min="2" max="20" step="0.5" value="4">
                   </div>
                   <div class="campo">
-                    <label for="mus-min-dur">Duração mínima permitida (segundos)</label>
+                    <label for="mus-min-dur">Mínimo (seg)</label>
                     <input type="number" id="mus-min-dur" min="30" max="300" value="90">
                   </div>
                 </div>
@@ -572,30 +597,30 @@
               <label class="switch-padrao" for="mus-bloq-explicito">
                 <input type="checkbox" id="mus-bloq-explicito">
                 <span class="trilho-switch"></span>
-                <span>Bloquear músicas marcadas como explícitas no Spotify</span>
+                <span>Bloquear músicas marcadas como explícitas</span>
               </label>
             </div>
 
             <div class="barra-salvar-bar">
-              <button type="submit" class="btn btn-principal">Salvar regras de música</button>
+              <button type="submit" class="btn btn-principal btn-salvar-musica">Salvar regras de música</button>
             </div>
           </form>
 
           <!-- Bloqueios -->
           <div class="cartao-painel pilha-blocos">
             <h2 class="titulo-subbloco sem-margem">Músicas e artistas bloqueados</h2>
-            <p class="texto-apoio">Bloqueie direto da fila acima clicando em "Bloq. música" ou "Bloq. artista".</p>
+            <p class="texto-apoio">Bloqueie direto da fila ou do log clicando em "Bloq. música" ou "Bloq. artista".</p>
             <div id="musica-lista-bloqueios" class="musica-lista-bloq"></div>
           </div>
 
           <!-- Endereço do Worker (conta Cloudflare da casa) -->
           <form id="form-musica-servidor" class="cartao-painel pilha-blocos">
             <h2 class="titulo-subbloco sem-margem">Servidor de música (Cloudflare Worker)</h2>
-            <p class="texto-apoio">Cole aqui a URL <code>https://rainbowpub-musica.….workers.dev</code> criada na conta Cloudflare da casa.</p>
-            <div class="linha-seletor-som">
+            <p class="texto-apoio">URL <code>https://rainbowpub-musica.….workers.dev</code> na conta Cloudflare da casa.</p>
+            <div class="musica-servidor-linha">
               <div class="campo" style="flex: 1;">
                 <label for="mus-api-url">URL do Worker</label>
-                <input type="url" id="mus-api-url" placeholder="https://rainbowpub-musica.conta.workers.dev">
+                <input type="url" id="mus-api-url" placeholder="https://rainbowpub-musica.rainbowpub.workers.dev">
               </div>
               <button type="submit" class="btn btn-secundario">Salvar endereço</button>
             </div>

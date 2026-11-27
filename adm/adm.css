@@ -3241,6 +3241,40 @@ body.com-modal { overflow: hidden; }
 
 
 /* ─── Tela de Música / Spotify ─── */
+.subnav-musica {
+  margin-bottom: 14px;
+}
+
+.subnav-musica .subnav-ajustes__aba {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.subnav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background-color: var(--superficie-2);
+  color: var(--texto);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.subnav-ajustes__aba.ativa .subnav-badge {
+  background-color: var(--rosa);
+  color: var(--texto-rosa);
+}
+
+.musica-nota-reset {
+  font-size: 12.5px;
+}
+
 .musica-status-linha {
   display: flex;
   flex-wrap: wrap;
@@ -3256,7 +3290,7 @@ body.com-modal { overflow: hidden; }
   background-color: var(--superficie-2);
   border: 1px solid var(--linha);
   color: var(--texto-2);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -3288,6 +3322,10 @@ body.com-modal { overflow: hidden; }
 
 .seletor-modo--2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.seletor-modo--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .musica-now {
@@ -3374,9 +3412,8 @@ body.com-modal { overflow: hidden; }
 }
 
 .musica-atalhos-dur {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -3412,7 +3449,7 @@ body.com-modal { overflow: hidden; }
   grid-template-columns: 34px 44px minmax(0, 1fr) auto;
   gap: 10px 12px;
   align-items: center;
-  padding: 10px 12px;
+  padding: 12px;
   border-radius: var(--raio);
   background-color: var(--superficie-2);
   border: 1px solid var(--linha);
@@ -3441,6 +3478,7 @@ body.com-modal { overflow: hidden; }
 
 .musica-item-txt {
   min-width: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -3551,6 +3589,12 @@ body.com-modal { overflow: hidden; }
   text-overflow: ellipsis;
 }
 
+.musica-servidor-linha {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
 .musica-log-filtros {
   display: flex;
   flex-wrap: wrap;
@@ -3567,36 +3611,46 @@ body.com-modal { overflow: hidden; }
 .musica-lista-logs {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: 520px;
-  overflow-y: auto;
-  padding-right: 2px;
+  gap: 10px;
 }
 
 .musica-log-item {
-  display: grid;
-  grid-template-columns: 62px 42px minmax(0, 1fr) auto;
-  gap: 8px 12px;
+  display: flex;
   align-items: center;
-  padding: 10px 12px;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
   border-radius: var(--raio);
   background-color: var(--superficie-2);
   border: 1px solid var(--linha);
 }
 
+.musica-log-topo {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.musica-log-cab {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+}
+
 .musica-log-hora {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--texto-2);
-  text-align: center;
+  color: var(--apagado);
+  white-space: nowrap;
+  flex-shrink: 0;
   font-variant-numeric: tabular-nums;
 }
 
 .musica-log-quem {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-top: 2px;
   font-size: 13px;
   color: var(--rosa);
 }
@@ -3608,24 +3662,151 @@ body.com-modal { overflow: hidden; }
 .musica-log-device {
   font-size: 12px;
   color: var(--apagado);
+  line-height: 1.35;
 }
 
 @media (max-width: 900px) {
+  .cabecalho-musica {
+    gap: 10px;
+  }
+
+  .acoes-cabecalho--musica,
+  .acoes-player-musica,
+  .acoes-spotify-conn {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 8px;
+  }
+
+  .acoes-cabecalho--musica .btn,
+  .acoes-player-musica .btn,
+  .acoes-spotify-conn .btn {
+    width: 100%;
+    padding: 0 10px;
+  }
+
+  .subnav-musica {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .subnav-musica .subnav-ajustes__aba {
+    width: 100%;
+    padding: 0 8px;
+  }
+
   .musica-controles-grid,
   .musica-grade-playlists {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .seletor-modo--3 .seletor-modo__op {
+    padding: 6px 4px;
+  }
+
+  .seletor-modo--3 .seletor-modo__txt strong {
+    font-size: 12.5px;
+  }
+
+  .musica-now {
+    gap: 12px;
+  }
+
+  .musica-capa {
+    width: 52px;
+    height: 52px;
+  }
+
+  .musica-now__prog {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
   }
 
   .musica-item-fila {
-    grid-template-columns: 28px 40px minmax(0, 1fr);
+    grid-template-columns: 26px 42px minmax(0, 1fr);
+    gap: 8px 10px;
+    padding: 12px;
+  }
+
+  .musica-item-fila .musica-item-acoes {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    padding-top: 8px;
+    border-top: 1px solid var(--linha);
+  }
+
+  .musica-item-fila .musica-item-acoes .btn {
+    width: 100%;
+    min-height: 38px;
+    padding: 0 6px;
+    font-size: 12.5px;
+  }
+
+  .musica-log-filtros {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .botoes-periodo--2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .botoes-periodo--2 .btn-periodo {
+    width: 100%;
+    text-align: center;
   }
 
   .musica-log-item {
-    grid-template-columns: 52px 38px minmax(0, 1fr);
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
   }
 
-  .musica-item-acoes {
-    grid-column: 1 / -1;
-    justify-content: flex-end;
+  .musica-item-acoes--2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--linha);
+  }
+
+  .musica-item-acoes--2 .btn {
+    width: 100%;
+    min-height: 38px;
+    font-size: 13px;
+  }
+
+  .grade-musica-num {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .musica-atalhos-dur .btn {
+    padding: 0 4px;
+    font-size: 13px;
+    min-height: 40px;
+  }
+
+  .btn-salvar-musica,
+  #btn-carregar-playlists {
+    width: 100%;
+  }
+
+  .musica-servidor-linha {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .musica-servidor-linha .btn {
+    width: 100%;
   }
 }

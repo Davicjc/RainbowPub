@@ -26,8 +26,21 @@ let carregandoEstado = false;
 let ultimaCargaTs = 0;
 let telaAberta = false;
 let eventosLigados = false;
+let subAbaMusica = 'aovivo';
 let filtroLogPeriodo = 'noite';
 let buscaLogTexto = '';
+
+export function irParaSubAbaMusica(sub) {
+  subAbaMusica = ['aovivo', 'log', 'ajustes'].includes(sub) ? sub : 'aovivo';
+  document.querySelectorAll('[data-musica-sub]').forEach((b) => {
+    const on = b.dataset.musicaSub === subAbaMusica;
+    b.classList.toggle('ativa', on);
+    b.setAttribute('aria-selected', String(on));
+  });
+  document.querySelectorAll('[data-musica-painel]').forEach((p) => {
+    p.hidden = p.dataset.musicaPainel !== subAbaMusica;
+  });
+}
 
 const STATUS_LOG = {
   tocando: { txt: 'Tocando agora', cls: 'musica-chip--ok' },
@@ -84,13 +97,19 @@ async function apiAdm(caminho, opts = {}) {
   return json;
 }
 
-function atualizarBadges(qtd) {
-  const n = Number(qtd || 0);
-  for (const id of ['badge-menu-musica', 'badge-mobile-musica']) {
+function atualizarBadges(qtdFila, qtdLogsNoite = 0) {
+  const n = Number(qtdFila || 0);
+  for (const id of ['badge-menu-musica', 'badge-mobile-musica', 'badge-sub-fila']) {
     const el = $(id);
     if (!el) continue;
     el.hidden = n <= 0;
     el.textContent = String(n);
+  }
+  const bLog = $('badge-sub-log');
+  if (bLog) {
+    const nl = Number(qtdLogsNoite || 0);
+    bLog.hidden = nl <= 0;
+    bLog.textContent = String(nl);
   }
 }
 
@@ -110,7 +129,9 @@ export async function carregarEstadoMusica({ forcar = false, silencioso = false 
       progBaseTs = Date.now();
       if (mudouTrack) fimDisparadoParaId = '';
     }
-    atualizarBadges((d.fila?.length || 0) + (d.aguardandoAprovacao?.length || 0));
+    const noiteAtual = d.noiteAtual || '';
+    const logsNoite = (d.logs || []).filter((x) => !noiteAtual || x.noite === noiteAtual).length;
+    atualizarBadges((d.fila?.length || 0) + (d.aguardandoAprovacao?.length || 0), logsNoite);
     renderizarTelaMusica();
   } catch (err) {
     if (!silencioso) {
@@ -151,6 +172,12 @@ function renderizarTelaMusica() {
     btnDesconectar.hidden = true;
   }
   avisoCred.hidden = d.spotifyConfigurado !== false;
+  const faixaDesc = $('musica-faixa-desconectado');
+  if (faixaDesc) faixaDesc.hidden = Boolean(d.conectado);
+  const subTopo = $('musica-sub-topo');
+  if (subTopo && d.conectado && d.contaSpotify?.displayName) {
+    subTopo.textContent = `Conectado: ${d.contaSpotify.displayName} · reset todo dia às 12h.`;
+  }
 
   // 2. Controle dos clientes (Liberado / Com aprovação / Desativado) + Modo (Aberto / Playlists)
   const controleAtual = cfg.controle || (cfg.ativo ? 'liberado' : 'desativado');
@@ -371,20 +398,22 @@ function renderizarLogsMusica() {
       const primeiroArtista = String(item.artistas || '').split(',')[0].trim() || item.artistas;
 
       return `<article class="musica-log-item">
-        <span class="musica-log-hora">${esc(fmtHoraLog(item.criadoEm, mostrarData))}</span>
-        ${item.capa ? `<img class="musica-capa-mini" src="${esc(item.capa)}" alt="" loading="lazy">` : '<span class="musica-capa-mini"></span>'}
-        <div class="musica-item-txt">
-          <div class="musica-badges-linha">
-            <strong>${esc(item.nome)}</strong>
-            <span class="musica-chip ${st.cls}">${esc(st.txt)}</span>
-          </div>
-          <small>${esc(item.artistas)} · ${fmtDuracao(item.duracaoMs)}</small>
-          <div class="musica-log-quem">
-            <span>Pedida por <strong>${esc(item.pedidoPor || 'Anônimo')}</strong></span>
+        <div class="musica-log-topo">
+          ${item.capa ? `<img class="musica-capa-mini" src="${esc(item.capa)}" alt="" loading="lazy">` : '<span class="musica-capa-mini"></span>'}
+          <div class="musica-item-txt">
+            <div class="musica-log-cab">
+              <strong>${esc(item.nome)}</strong>
+              <span class="musica-log-hora">${esc(fmtHoraLog(item.criadoEm, mostrarData))}</span>
+            </div>
+            <small>${esc(item.artistas)} · ${fmtDuracao(item.duracaoMs)}</small>
+            <div class="musica-badges-linha">
+              <span class="musica-chip ${st.cls}">${esc(st.txt)}</span>
+              <span class="musica-log-quem">Pedida por <strong>${esc(item.pedidoPor || 'Anônimo')}</strong></span>
+            </div>
             ${detalhes.length ? `<span class="musica-log-device">${esc(detalhes.join(' · '))}</span>` : ''}
           </div>
         </div>
-        <div class="musica-item-acoes">
+        <div class="musica-item-acoes musica-item-acoes--2">
           <button type="button" class="btn btn-fantasma btn-compacto" data-bloq-log-tipo="track" data-bloq-log-id="${esc(item.trackId)}" data-bloq-log-nome="${esc(`${item.nome} — ${item.artistas}`)}">Bloq. música</button>
           ${item.artistaPrincipalId ? `<button type="button" class="btn btn-fantasma btn-compacto" data-bloq-log-tipo="artist" data-bloq-log-id="${esc(item.artistaPrincipalId)}" data-bloq-log-nome="${esc(primeiroArtista)}">Bloq. artista</button>` : ''}
         </div>
@@ -606,6 +635,10 @@ async function salvarPlaylistsSelecionadas() {
 function ligarEventos() {
   if (eventosLigados) return;
   eventosLigados = true;
+
+  document.querySelectorAll('[data-musica-sub]').forEach((btn) => {
+    btn.addEventListener('click', () => irParaSubAbaMusica(btn.dataset.musicaSub));
+  });
 
   $('btn-spotify-conectar').addEventListener('click', async () => {
     try {

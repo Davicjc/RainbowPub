@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS config (
   ativo INTEGER NOT NULL DEFAULT 1,
   controle TEXT NOT NULL DEFAULT 'liberado', -- 'liberado' | 'aprovacao' | 'desativado'
   modo TEXT NOT NULL DEFAULT 'aberto', -- 'aberto' | 'playlists'
-  cooldown_min INTEGER NOT NULL DEFAULT 15,
+  cooldown_min INTEGER NOT NULL DEFAULT 5,
   max_fila INTEGER NOT NULL DEFAULT 15,
   max_mesmo_artista INTEGER NOT NULL DEFAULT 1,
   min_duracao_seg INTEGER NOT NULL DEFAULT 90,

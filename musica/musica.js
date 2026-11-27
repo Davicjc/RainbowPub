@@ -39,9 +39,10 @@ function fmtDuracao(ms) {
 }
 
 function fmtCooldown(seg) {
-  const m = Math.floor(seg / 60);
-  const s = seg % 60;
-  return m > 0 ? `${m}m ${String(s).padStart(2, '0')}s` : `${s}s`;
+  const sTot = Math.max(0, Math.floor(Number(seg || 0)));
+  const m = Math.floor(sTot / 60);
+  const s = sTot % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
 async function api(caminho, opts = {}) {
@@ -257,11 +258,22 @@ function atualizarBarraProgresso() {
 
 function renderizarCooldown() {
   const el = $('#avisoCooldown');
+  const rel = $('#avisoCooldownRelogio');
+  const sub = $('#avisoCooldownSub');
+  const minCfg = estado.dados?.regras?.cooldownMin || 5;
   if (estado.cooldownRestante > 0 && estado.dados?.ativo) {
     el.hidden = false;
-    el.textContent = `Você já pediu uma música há pouco · próximo pedido liberado em ${fmtCooldown(estado.cooldownRestante)}`;
+    if (rel) rel.textContent = fmtCooldown(estado.cooldownRestante);
+    if (sub) sub.textContent = `Espere o tempo acabar (${minCfg} min entre pedidos) para escolher a próxima.`;
   } else {
     el.hidden = true;
+  }
+  const sucRel = $('#sucessoCooldownRelogio');
+  if (sucRel) {
+    sucRel.textContent =
+      estado.cooldownRestante > 0
+        ? `Próximo pedido liberado em ${fmtCooldown(estado.cooldownRestante)}`
+        : 'Você já pode escolher outra música!';
   }
 }
 
@@ -459,9 +471,29 @@ function mostrarGuiaSePreciso(noite) {
   } catch {}
   guiaEl.hidden = false;
   document.body.classList.add('travado');
-  $('#btnAceitarGuia')?.addEventListener(
+
+  const btn = $('#btnAceitarGuia');
+  if (!btn) return;
+  let falta = 5;
+  btn.disabled = true;
+  btn.textContent = `Leia rapidinho (${falta}s)`;
+
+  const timerGuia = setInterval(() => {
+    falta -= 1;
+    if (falta > 0) {
+      btn.textContent = `Leia rapidinho (${falta}s)`;
+    } else {
+      clearInterval(timerGuia);
+      btn.disabled = false;
+      btn.textContent = 'Entendi, bora escolher';
+    }
+  }, 1000);
+
+  btn.addEventListener(
     'click',
     () => {
+      if (btn.disabled) return;
+      clearInterval(timerGuia);
       guiaEl.hidden = true;
       document.body.classList.remove('travado');
       try { localStorage.setItem(GUIA_NOITE_KEY, chaveNoite); } catch {}
@@ -527,8 +559,9 @@ function abrirFolhaPedido(faixa, recadoHtml = '', editarNome = false) {
     ${mostrarCampoNome
       ? `<label class="campo">
           <span class="campo__rotulo">Seu nome <small style="font-weight:500;color:var(--texto-2)">(obrigatório)</small></span>
-          <input id="mNome" required minlength="2" maxlength="24" autocomplete="given-name" placeholder="Como te chamam? Aparece na fila" value="${esc(nomeSalvo)}">
-        </label>`
+          <input id="mNome" required minlength="2" maxlength="24" autocomplete="given-name" placeholder="Seu nome de verdade (aparece na fila)" value="${esc(nomeSalvo)}">
+        </label>
+        <p class="aviso-nome-real"><strong>Use seu nome real:</strong> nomes falsos ou de zoeira serão removidos de poder escolher músicas.</p>`
       : `<div class="nome-auto">
           <span>Pedindo como <strong>${esc(nomeSalvo)}</strong></span>
           <button type="button" class="nome-auto__trocar" id="btnTrocarNome">Trocar</button>
@@ -638,6 +671,7 @@ async function confirmarPedidoMusica() {
           <span>${esc(item.nome)} · ${esc(item.artistas)}</span>
         </div>
         <p class="nota">Assim que a equipe aprovar, ela entra na fila do som do bar.</p>
+        ${estado.cooldownRestante > 0 ? `<p class="sucesso-cooldown" id="sucessoCooldownRelogio">Próximo pedido liberado em ${fmtCooldown(estado.cooldownRestante)}</p>` : ''}
         <button type="button" class="botao botao--largo" id="btnFecharSucesso">Voltar</button>
       </div>`;
     } else {
@@ -651,6 +685,7 @@ async function confirmarPedidoMusica() {
           <span>${esc(item.nome)} · ${esc(item.artistas)}</span>
         </div>
         <p class="nota">${item.status === 'enviada' ? 'Ela já foi enviada para a fila do Spotify do bar.' : 'Ela vai entrar automaticamente no som do bar na vez dela.'}</p>
+        ${estado.cooldownRestante > 0 ? `<p class="sucesso-cooldown" id="sucessoCooldownRelogio">Próximo pedido liberado em ${fmtCooldown(estado.cooldownRestante)}</p>` : ''}
         <button type="button" class="botao botao--largo" id="btnFecharSucesso">Ver a fila</button>
       </div>`;
     }
