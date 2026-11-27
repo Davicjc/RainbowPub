@@ -185,7 +185,7 @@ function renderizarStatus() {
     aviso.hidden = true;
   }
 
-  $('#blocoEscolha').hidden = !ligado;
+  $('#blocoEscolha').hidden = !ligado || estado.cooldownRestante > 0;
   $('#blocoModo').textContent = d.modo === 'playlists' ? 'Playlists da casa' : 'Spotify';
   $('#campoBusca').placeholder =
     d.modo === 'playlists' ? 'Filtrar música ou artista das playlists…' : 'Digite música ou artista…';
@@ -261,13 +261,17 @@ function renderizarCooldown() {
   const rel = $('#avisoCooldownRelogio');
   const sub = $('#avisoCooldownSub');
   const minCfg = estado.dados?.regras?.cooldownMin || 5;
-  if (estado.cooldownRestante > 0 && estado.dados?.ativo) {
+  const ligado = Boolean(estado.dados?.conectado && estado.dados?.ativo);
+  const emEspera = ligado && estado.cooldownRestante > 0;
+  if (emEspera) {
     el.hidden = false;
     if (rel) rel.textContent = fmtCooldown(estado.cooldownRestante);
     if (sub) sub.textContent = `Espere o tempo acabar (${minCfg} min entre pedidos) para escolher a próxima.`;
   } else {
     el.hidden = true;
   }
+  const blocoEscolha = $('#blocoEscolha');
+  if (blocoEscolha) blocoEscolha.hidden = !ligado || emEspera;
   const sucRel = $('#sucessoCooldownRelogio');
   if (sucRel) {
     sucRel.textContent =
@@ -660,6 +664,15 @@ async function confirmarPedidoMusica() {
 
     const item = res.item;
     estado.cooldownRestante = Number(item?.cooldownRestanteSeg || 0);
+    // Limpa a busca e recolhe a lista de resultados após pedir a música.
+    campoBusca.value = '';
+    btnLimparBusca.hidden = true;
+    if (estado.dados?.modo !== 'playlists') {
+      estado.resultados = [];
+      estado.erroBusca = '';
+      renderizarResultados();
+    }
+    renderizarCooldown();
     if (item.aguardandoAprovacao) {
       $('#folhaMusicaTitulo').textContent = 'Sugestão enviada!';
       folhaCorpo.innerHTML = `<div class="pronto">
@@ -719,6 +732,11 @@ setInterval(() => {
   if (estado.cooldownRestante > 0) {
     estado.cooldownRestante = Math.max(0, estado.cooldownRestante - 1);
     renderizarCooldown();
-    if (estado.cooldownRestante === 0) renderizarResultados();
+    if (estado.cooldownRestante === 0) {
+      renderizarResultados();
+      if (estado.dados?.modo === 'playlists' && !estado.resultados.length) {
+        executarBusca('');
+      }
+    }
   }
 }, 1000);
