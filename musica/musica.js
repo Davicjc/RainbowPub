@@ -8,6 +8,7 @@ import { obterApiBaseSincrona, resolverApiBase } from '../js/musica-api.js';
 const $ = (s, el = document) => el.querySelector(s);
 const NOME_KEY = 'rainbow:nome';
 const TOKEN_CLIENTE_KEY = 'rainbow:musica_cliente_token';
+const GUIA_NOITE_KEY = 'rainbow:musica_guia_noite';
 
 let API_BASE = obterApiBaseSincrona();
 let apiPronta = resolverApiBase().then((u) => { API_BASE = u; return u; });
@@ -135,6 +136,7 @@ async function carregarStatus({ forcar = false } = {}) {
     renderizarTocandoAgora();
     renderizarFila();
     renderizarCooldown();
+    mostrarGuiaSePreciso(d.noiteAtual);
     if (estado.resultados.length) renderizarResultados();
 
     if (d.conectado && d.ativo && d.modo === 'playlists' && (mudouModo || !estado.resultados.length)) {
@@ -308,8 +310,8 @@ function renderizarFila() {
           ${item.capa ? `<img class="fila-capa" src="${esc(item.capa)}" alt="" loading="lazy">` : '<span class="fila-capa"></span>'}
           <div class="faixa-txt">
             <strong class="faixa-nome">${esc(item.nome)}</strong>
-            <span class="faixa-sub">${esc(item.artistas)}</span>
-            <span class="faixa-meta">${item.pedidoPor ? `Pedida por ${esc(item.pedidoPor)} · ` : ''}${fmtDuracao(item.duracaoMs)}</span>
+            <span class="faixa-sub">${esc(item.artistas)} · ${fmtDuracao(item.duracaoMs)}</span>
+            ${item.pedidoPor ? `<span class="fila-quem">Escolhida por <strong>${esc(item.pedidoPor)}</strong></span>` : ''}
             ${proxima ? '<span class="fila-badge">Próxima no som</span>' : ''}
           </div>
         </article>`;
@@ -443,6 +445,31 @@ function renderizarResultados() {
   });
 }
 
+/* ─────────────── Guia de boas-vindas e respeito (1x por noite) ─────────────── */
+
+const guiaEl = $('#guiaMusica');
+let guiaVerificada = false;
+
+function mostrarGuiaSePreciso(noite) {
+  if (!guiaEl || guiaVerificada) return;
+  guiaVerificada = true;
+  const chaveNoite = noite || new Date().toISOString().slice(0, 10);
+  try {
+    if (localStorage.getItem(GUIA_NOITE_KEY) === chaveNoite) return;
+  } catch {}
+  guiaEl.hidden = false;
+  document.body.classList.add('travado');
+  $('#btnAceitarGuia')?.addEventListener(
+    'click',
+    () => {
+      guiaEl.hidden = true;
+      document.body.classList.remove('travado');
+      try { localStorage.setItem(GUIA_NOITE_KEY, chaveNoite); } catch {}
+    },
+    { once: true }
+  );
+}
+
 /* ─────────────── Folha de confirmação + GPS ─────────────── */
 
 const folha = $('#folhaMusica');
@@ -499,8 +526,8 @@ function abrirFolhaPedido(faixa, recadoHtml = '', editarNome = false) {
     </div>
     ${mostrarCampoNome
       ? `<label class="campo">
-          <span class="campo__rotulo">Seu nome (opcional)</span>
-          <input id="mNome" maxlength="24" autocomplete="given-name" placeholder="Aparece na fila do bar" value="${esc(nomeSalvo)}">
+          <span class="campo__rotulo">Seu nome <small style="font-weight:500;color:var(--texto-2)">(obrigatório)</small></span>
+          <input id="mNome" required minlength="2" maxlength="24" autocomplete="given-name" placeholder="Como te chamam? Aparece na fila" value="${esc(nomeSalvo)}">
         </label>`
       : `<div class="nome-auto">
           <span>Pedindo como <strong>${esc(nomeSalvo)}</strong></span>
@@ -541,10 +568,13 @@ async function confirmarPedidoMusica() {
 
   const campoNome = $('#mNome');
   const nome = (campoNome ? campoNome.value : obterNomeSalvo()).trim().replace(/\s+/g, ' ').slice(0, 24);
-  if (nome) {
-    localStorage.setItem(NOME_KEY, nome);
-    atualizarSaudacaoNome();
+  if (nome.length < 2) {
+    abrirFolhaPedido(faixa, '<p class="recado"><strong>Escreva seu nome</strong> (pelo menos 2 letras) para colocar a música na fila.</p>', true);
+    $('#mNome')?.focus();
+    return;
   }
+  localStorage.setItem(NOME_KEY, nome);
+  atualizarSaudacaoNome();
 
   if (estado.dados?.turnstileSiteKey && !estado.turnstileToken) {
     return abrirFolhaPedido(faixa, '<p class="recado">Aguarde a verificação anti-robô concluir e tente de novo.</p>');

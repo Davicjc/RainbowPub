@@ -480,6 +480,27 @@
             <div id="musica-lista-fila" class="musica-lista-fila"></div>
           </div>
 
+          <!-- Log completo de pedidos de música (com nome + aparelho + detalhes) -->
+          <div class="cartao-painel pilha-blocos">
+            <div class="cabecalho-subbloco-linha">
+              <div>
+                <h2 class="titulo-subbloco sem-margem">Log de pedidos de música</h2>
+                <p class="texto-apoio">Tudo que foi pedido, com nome de quem escolheu, aparelho, distância do bar e status.</p>
+              </div>
+              <span id="musica-cont-logs" class="texto-apoio">0 registros</span>
+            </div>
+
+            <div class="musica-log-filtros">
+              <div class="botoes-periodo" role="group" aria-label="Período do log de música">
+                <button type="button" class="btn-periodo ativo" data-log-periodo="noite">Esta noite</button>
+                <button type="button" class="btn-periodo" data-log-periodo="todos">Últimos 7 dias</button>
+              </div>
+              <input type="search" id="busca-musica-logs" class="busca" placeholder="Filtrar por pessoa, música, artista ou aparelho…" autocomplete="off">
+            </div>
+
+            <div id="musica-lista-logs" class="musica-lista-logs"></div>
+          </div>
+
           <!-- Playlists permitidas -->
           <div class="cartao-painel pilha-blocos" id="musica-bloco-playlists" hidden>
             <div class="cabecalho-subbloco-linha">

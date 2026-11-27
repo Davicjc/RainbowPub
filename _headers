@@ -1,0 +1,18 @@
+# Revalida HTML a cada abertura para pegar sempre o último carimbo ?v=<commit> em CSS/JS,
+# sem nunca apagar localStorage (pedidos abertos, nome do cliente e sessão continuam intactos).
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+/musica/
+  Cache-Control: public, max-age=0, must-revalidate
+/musica/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+/adm/
+  Cache-Control: public, max-age=0, must-revalidate
+/adm/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+/sobre/
+  Cache-Control: public, max-age=0, must-revalidate
+/sobre/index.html
+  Cache-Control: public, max-age=0, must-revalidate

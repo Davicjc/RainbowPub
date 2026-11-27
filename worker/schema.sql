@@ -52,6 +52,8 @@ CREATE TABLE IF NOT EXISTS fila (
   pedido_por TEXT NOT NULL DEFAULT '',
   cliente_hash TEXT NOT NULL DEFAULT '',
   ip_hash TEXT NOT NULL DEFAULT '',
+  dispositivo TEXT NOT NULL DEFAULT '',
+  meta_json TEXT NOT NULL DEFAULT '{}',
   status TEXT NOT NULL DEFAULT 'pendente',
   criado_em INTEGER NOT NULL,
   enviada_em INTEGER,

@@ -26,6 +26,25 @@ let carregandoEstado = false;
 let ultimaCargaTs = 0;
 let telaAberta = false;
 let eventosLigados = false;
+let filtroLogPeriodo = 'noite';
+let buscaLogTexto = '';
+
+const STATUS_LOG = {
+  tocando: { txt: 'Tocando agora', cls: 'musica-chip--ok' },
+  enviada: { txt: 'No Spotify', cls: 'musica-chip--ok' },
+  enviando: { txt: 'Enviando', cls: 'musica-chip--ok' },
+  pendente: { txt: 'Na fila', cls: '' },
+  aguardando: { txt: 'Aguardando', cls: 'musica-chip--aviso' },
+  tocada: { txt: 'Tocada', cls: '' },
+  removida: { txt: 'Removida', cls: 'musica-chip--erro' },
+};
+
+const normBusca = (t) =>
+  String(t || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
 
 const $ = (id) => document.getElementById(id);
 
@@ -295,6 +314,111 @@ function renderizarTelaMusica() {
     listaBloq.querySelectorAll('[data-desbloq]').forEach((btn) => {
       btn.addEventListener('click', () => desbloquearItem(btn.dataset.desbloq));
     });
+  }
+
+  // 8. Log completo de pedidos de música (com nome + aparelho + distância + rede)
+  renderizarLogsMusica();
+}
+
+function fmtHoraLog(ts, mostrarData) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  if (mostrarData) {
+    return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
+  return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function renderizarLogsMusica() {
+  const el = $('musica-lista-logs');
+  const cont = $('musica-cont-logs');
+  if (!el || !dadosEstado) return;
+
+  const noiteAtual = dadosEstado.noiteAtual || '';
+  const todos = Array.isArray(dadosEstado.logs) ? dadosEstado.logs : [];
+  const q = normBusca(buscaLogTexto);
+
+  const filtrados = todos.filter((item) => {
+    if (filtroLogPeriodo === 'noite' && noiteAtual && item.noite !== noiteAtual) return false;
+    if (!q) return true;
+    const alvo = normBusca(
+      `${item.pedidoPor} ${item.nome} ${item.artistas} ${item.dispositivo} ${item.aparelhoId} ${item.operadora} ${item.status}`
+    );
+    return alvo.includes(q);
+  });
+
+  if (cont) {
+    cont.textContent = `${filtrados.length} ${filtrados.length === 1 ? 'registro' : 'registros'}`;
+  }
+
+  if (!filtrados.length) {
+    el.innerHTML = `<p class="estado-vazio">${
+      q ? 'Nenhum pedido encontrado com esse filtro.' : 'Nenhum pedido de música registrado neste período.'
+    }</p>`;
+    return;
+  }
+
+  const mostrarData = filtroLogPeriodo === 'todos';
+  el.innerHTML = filtrados
+    .map((item) => {
+      const st = STATUS_LOG[item.status] || { txt: item.status || '—', cls: '' };
+      const detalhes = [];
+      if (item.dispositivo) detalhes.push(item.dispositivo);
+      if (item.aparelhoId) detalhes.push(`Aparelho #${item.aparelhoId}`);
+      if (typeof item.distanciaM === 'number') detalhes.push(`a ${item.distanciaM} m do bar`);
+      if (item.operadora) detalhes.push(item.operadora);
+
+      const primeiroArtista = String(item.artistas || '').split(',')[0].trim() || item.artistas;
+
+      return `<article class="musica-log-item">
+        <span class="musica-log-hora">${esc(fmtHoraLog(item.criadoEm, mostrarData))}</span>
+        ${item.capa ? `<img class="musica-capa-mini" src="${esc(item.capa)}" alt="" loading="lazy">` : '<span class="musica-capa-mini"></span>'}
+        <div class="musica-item-txt">
+          <div class="musica-badges-linha">
+            <strong>${esc(item.nome)}</strong>
+            <span class="musica-chip ${st.cls}">${esc(st.txt)}</span>
+          </div>
+          <small>${esc(item.artistas)} · ${fmtDuracao(item.duracaoMs)}</small>
+          <div class="musica-log-quem">
+            <span>Pedida por <strong>${esc(item.pedidoPor || 'Anônimo')}</strong></span>
+            ${detalhes.length ? `<span class="musica-log-device">${esc(detalhes.join(' · '))}</span>` : ''}
+          </div>
+        </div>
+        <div class="musica-item-acoes">
+          <button type="button" class="btn btn-fantasma btn-compacto" data-bloq-log-tipo="track" data-bloq-log-id="${esc(item.trackId)}" data-bloq-log-nome="${esc(`${item.nome} — ${item.artistas}`)}">Bloq. música</button>
+          ${item.artistaPrincipalId ? `<button type="button" class="btn btn-fantasma btn-compacto" data-bloq-log-tipo="artist" data-bloq-log-id="${esc(item.artistaPrincipalId)}" data-bloq-log-nome="${esc(primeiroArtista)}">Bloq. artista</button>` : ''}
+        </div>
+      </article>`;
+    })
+    .join('');
+
+  el.querySelectorAll('[data-bloq-log-tipo]').forEach((btn) => {
+    btn.addEventListener('click', () =>
+      bloquearDoLog(btn.dataset.bloqLogTipo, btn.dataset.bloqLogId, btn.dataset.bloqLogNome)
+    );
+  });
+}
+
+async function bloquearDoLog(tipo, spotifyId, nome) {
+  const ok = await ctxAdm.confirmarAcao({
+    titulo: tipo === 'artist' ? 'Bloquear artista' : 'Bloquear música',
+    mensagem:
+      tipo === 'artist'
+        ? `Bloquear o artista "${nome}"? Nenhuma música desse artista poderá ser pedida na fila.`
+        : `Bloquear a música "${nome}"? Ela não poderá mais ser pedida.`,
+    textoConfirmar: 'Bloquear',
+    perigo: true,
+  });
+  if (!ok) return;
+  try {
+    await apiAdm('/adm/bloqueios', {
+      method: 'POST',
+      body: JSON.stringify({ tipo, spotifyId, nome }),
+    });
+    ctxAdm?.mostrarToast?.(tipo === 'artist' ? 'Artista bloqueado.' : 'Música bloqueada.', 'sucesso');
+    await carregarEstadoMusica({ silencioso: true });
+  } catch (err) {
+    ctxAdm?.mostrarToast?.(err.message || 'Erro ao bloquear.', 'erro');
   }
 }
 
@@ -596,6 +720,21 @@ function ligarEventos() {
     };
     await alterarConfigRapida(patch, 'Regras de proteção salvas.');
   });
+  document.querySelectorAll('[data-log-periodo]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      filtroLogPeriodo = btn.dataset.logPeriodo;
+      document.querySelectorAll('[data-log-periodo]').forEach((b) => {
+        b.classList.toggle('ativo', b.dataset.logPeriodo === filtroLogPeriodo);
+      });
+      renderizarLogsMusica();
+    });
+  });
+
+  $('busca-musica-logs')?.addEventListener('input', (e) => {
+    buscaLogTexto = e.target.value || '';
+    renderizarLogsMusica();
+  });
+
   $('form-musica-servidor')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const bruto = ($('mus-api-url')?.value || '').trim();

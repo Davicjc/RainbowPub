@@ -430,6 +430,77 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+.fila-quem {
+  display: block;
+  margin-top: 3px;
+  font-size: 13.5px;
+  color: var(--rosa);
+}
+.fila-quem strong { color: var(--texto); font-weight: 700; }
+
+/* Guia de boas-vindas e respeito */
+.guia-musica {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(7, 4, 7, 0.86);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px var(--margem);
+}
+.guia-musica__caixa {
+  position: relative;
+  width: min(100%, 460px);
+  max-height: 92dvh;
+  overflow-y: auto;
+  padding: 26px 22px 22px;
+  border-radius: 20px;
+  background: var(--parede-2);
+  border: 1px solid var(--fio-forte);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+}
+.guia-musica__faixa {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  border-radius: 20px 20px 0 0;
+  background: linear-gradient(90deg, #E5484D 0 16.66%, #F2892B 0 33.33%, #F5CB3B 0 50%, #3DBE6A 0 66.66%, #3B82E0 0 83.33%, #9157E0 0);
+}
+.guia-musica__titulo {
+  margin: 4px 0 8px;
+  font-family: var(--anton);
+  font-weight: 400;
+  font-size: clamp(30px, 8.5vw, 38px);
+  line-height: 1.05;
+  text-transform: uppercase;
+  color: var(--rosa);
+}
+.guia-musica__intro {
+  margin: 0 0 16px;
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--texto-2);
+}
+.guia-musica__regras {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.guia-musica__regras li {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--parede);
+  border: 1px solid var(--fio);
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--texto-2);
+}
+.guia-musica__regras strong { color: var(--texto); }
 
 .vazio-musica {
   margin: 0;

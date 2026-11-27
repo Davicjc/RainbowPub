@@ -222,10 +222,51 @@ function distanciaMetros(a, b) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
+function parseDispositivo(uaRaw) {
+  const ua = String(uaRaw || '');
+  if (!ua) return 'Aparelho não identificado';
+
+  let os = 'Outro';
+  if (/iPhone/i.test(ua)) os = 'iPhone';
+  else if (/iPad/i.test(ua)) os = 'iPad';
+  else if (/Android/i.test(ua)) {
+    const mMarca = ua.match(/Android[^;]*;\s*([^;)]+?)(?:\s+Build|\))/i);
+    let modelo = (mMarca?.[1] || '').trim();
+    if (/^K$/i.test(modelo) || modelo.length < 2) modelo = '';
+    if (/SM-|Samsung/i.test(modelo)) os = 'Android (Samsung)';
+    else if (/moto|motorola/i.test(modelo)) os = 'Android (Motorola)';
+    else if (/Redmi|Mi\s|POCO|Xiaomi/i.test(modelo)) os = 'Android (Xiaomi)';
+    else if (/Pixel/i.test(modelo)) os = 'Android (Pixel)';
+    else os = modelo && modelo.length <= 20 ? `Android (${modelo})` : 'Android';
+  } else if (/Windows/i.test(ua)) os = 'Windows';
+  else if (/Macintosh|Mac OS X/i.test(ua)) os = 'Mac';
+  else if (/Linux/i.test(ua)) os = 'Linux';
+
+  let nav = '';
+  if (/Instagram/i.test(ua)) nav = 'Instagram';
+  else if (/WhatsApp/i.test(ua)) nav = 'WhatsApp';
+  else if (/FBAN|FBAV/i.test(ua)) nav = 'Facebook';
+  else if (/EdgA|EdgiOS|Edg\//i.test(ua)) nav = 'Edge';
+  else if (/OPR|Opera/i.test(ua)) nav = 'Opera';
+  else if (/SamsungBrowser/i.test(ua)) nav = 'Samsung Internet';
+  else if (/Firefox|FxiOS/i.test(ua)) nav = 'Firefox';
+  else if (/CriOS|Chrome/i.test(ua)) nav = 'Chrome';
+  else if (/Safari/i.test(ua)) nav = 'Safari';
+
+  return nav ? `${os} · ${nav}` : os;
+}
+
 export async function validarGps(geo, cfg, env) {
-  if (!cfg.exigirGps) return { ok: true };
+  if (!cfg.exigirGps) {
+    // Mesmo com GPS opcional, calcula distância se o cliente enviou coordenadas válidas.
+    if (geo && typeof geo.lat === 'number' && typeof geo.lng === 'number' && Number.isFinite(geo.lat) && Number.isFinite(geo.lng)) {
+      const lojaGps = await obterGpsLoja(env);
+      return { ok: true, distanciaM: Math.round(distanciaMetros(geo, lojaGps)) };
+    }
+    return { ok: true, distanciaM: null };
+  }
   const lojaGps = await obterGpsLoja(env);
-  if (!lojaGps.ativo) return { ok: true };
+  if (!lojaGps.ativo) return { ok: true, distanciaM: null };
 
   if (
     !geo ||
@@ -257,7 +298,7 @@ export async function validarGps(geo, cfg, env) {
     };
   }
 
-  return { ok: true };
+  return { ok: true, distanciaM: Math.round(dist) };
 }
 
 /* ─────────────── Rate Limit (seguro para Wi-Fi compartilhado do bar) ─────────────── */
@@ -606,7 +647,7 @@ export async function buscarMusicas(env, termo, playlistId = '') {
 
 /* ─────────────── Pedir Música (todas as travas server-side) ─────────────── */
 
-export async function processarPedidoMusica(env, { trackId, pedidoPor, geo, cliente, ipHash }) {
+export async function processarPedidoMusica(env, { trackId, pedidoPor, geo, cliente, ipHash, userAgent = '', cf = null }) {
   const db = env.DB;
   const cfg = await garantirNoiteAtual(db);
 
@@ -621,6 +662,16 @@ export async function processarPedidoMusica(env, { trackId, pedidoPor, geo, clie
 
   if (!trackId || !/^[A-Za-z0-9]{10,40}$/.test(trackId)) {
     return { ok: false, status: 400, erro: 'Música inválida.' };
+  }
+
+  // Nome obrigatório (aparece na fila pública para todos e no log do /adm)
+  const nomeLimpo = String(pedidoPor || '')
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 24);
+  if (nomeLimpo.length < 2) {
+    return { ok: false, status: 400, erro: 'Informe seu nome (mínimo 2 letras) para pedir uma música.' };
   }
 
   // 1. GPS no servidor
@@ -812,12 +863,16 @@ export async function processarPedidoMusica(env, { trackId, pedidoPor, geo, clie
 
   // 9. Inserção ATÔMICA no SQLite: valida max_fila, max_mesmo_artista, cooldown e duplicata no momento do INSERT.
   const id = idAleatorio(10);
-  const nomeLimpo = String(pedidoPor || '')
-    .replace(/[\r\n\t]+/g, ' ')
-    .trim()
-    .slice(0, 24);
   const statusInicial = cfg.controle === 'aprovacao' ? 'aguardando' : 'pendente';
   const corteCooldown = cfg.cooldownMin > 0 ? agora - cfg.cooldownMin * 60_000 : 0;
+  const dispositivo = parseDispositivo(userAgent);
+  const metaJson = JSON.stringify({
+    aparelhoId: String(cliente.clienteHash || '').slice(0, 6).toUpperCase(),
+    distanciaM: typeof gpsOk.distanciaM === 'number' ? gpsOk.distanciaM : null,
+    precisaoGps: typeof geo?.precisao === 'number' && Number.isFinite(geo.precisao) ? Math.round(geo.precisao) : null,
+    operadora: String(cf?.asOrganization || '').slice(0, 48),
+    cidade: String(cf?.city || '').slice(0, 40),
+  });
 
   let inserido;
   try {
@@ -825,9 +880,10 @@ export async function processarPedidoMusica(env, { trackId, pedidoPor, geo, clie
       .prepare(
         `INSERT INTO fila (
            id, noite, track_id, uri, nome, artistas, artista_principal_id,
-           album, capa, duracao_ms, pedido_por, cliente_hash, ip_hash, status, criado_em
+           album, capa, duracao_ms, pedido_por, cliente_hash, ip_hash,
+           dispositivo, meta_json, status, criado_em
          )
-         SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+         SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
          WHERE (SELECT COUNT(*) FROM fila WHERE noite = ? AND status IN ('enviada', 'enviando', 'pendente', 'aguardando')) < ?
            AND (? = '' OR (SELECT COUNT(*) FROM fila WHERE noite = ? AND status IN ('enviada', 'enviando', 'pendente', 'aguardando') AND artista_principal_id = ?) < ?)
            AND (? = 0 OR NOT EXISTS (SELECT 1 FROM fila WHERE noite = ? AND cliente_hash = ? AND status != 'removida' AND criado_em > ?))`
@@ -846,6 +902,8 @@ export async function processarPedidoMusica(env, { trackId, pedidoPor, geo, clie
         nomeLimpo,
         cliente.clienteHash,
         ipHash,
+        dispositivo,
+        metaJson,
         statusInicial,
         agora,
         // Condições atômicas:

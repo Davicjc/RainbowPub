@@ -114,6 +114,21 @@
     </section>
   </main>
 
+  <!-- Guia de boas-vindas e respeito (exibida 1x por noite ao entrar em /musica/) -->
+  <div class="guia-musica" id="guiaMusica" role="dialog" aria-modal="true" aria-labelledby="guiaMusicaTitulo" hidden>
+    <div class="guia-musica__caixa">
+      <span class="guia-musica__faixa" aria-hidden="true"></span>
+      <h2 class="guia-musica__titulo" id="guiaMusicaTitulo">O som é de todo mundo</h2>
+      <p class="guia-musica__intro">Antes de escolher a próxima música, um combinado rápido para manter o Rainbow sempre acolhedor e com a vibe lá em cima:</p>
+      <ul class="guia-musica__regras">
+        <li><strong>Combine com o ambiente</strong> — escolha músicas que somem com o clima da casa e respeitem todo mundo aqui dentro.</li>
+        <li><strong>Respeito sempre</strong> — o Rainbow é espaço de acolhimento e liberdade. Músicas ofensivas ou de zoeira são removidas pela equipe.</li>
+        <li><strong>Seu nome vai na fila</strong> — todo mundo no bar vê quem escolheu cada música.</li>
+      </ul>
+      <button type="button" class="botao botao--grande botao--arco botao--largo" id="btnAceitarGuia">Entendi, bora escolher</button>
+    </div>
+  </div>
+
   <!-- Folha de confirmação + GPS + Turnstile -->
   <div class="folha" id="folhaMusica" role="dialog" aria-modal="true" aria-labelledby="folhaMusicaTitulo" hidden>
     <div class="folha__caixa">

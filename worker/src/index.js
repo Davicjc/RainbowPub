@@ -139,6 +139,8 @@ async function atenderRequisicao(request, env, ctx) {
         geo: body.geo,
         cliente,
         ipHash,
+        userAgent: request.headers.get('User-Agent') || '',
+        cf: request.cf || null,
       });
       if (!res.ok) {
         return jsonResp(
@@ -238,16 +240,45 @@ async function atenderRequisicao(request, env, ctx) {
         .bind(cfg.noiteAtual)
         .all();
 
-      const historico = await env.DB
+      const logsRes = await env.DB
         .prepare(
-          `SELECT id, track_id, nome, artistas, capa, pedido_por, status, tocada_em, criado_em
+          `SELECT id, noite, track_id, nome, artistas, artista_principal_id, capa, duracao_ms,
+                  pedido_por, cliente_hash, dispositivo, meta_json, status, criado_em, enviada_em, tocada_em
            FROM fila
-           WHERE noite = ? AND status IN ('tocando', 'tocada')
-           ORDER BY COALESCE(tocada_em, criado_em) DESC
-           LIMIT 15`
+           ORDER BY criado_em DESC
+           LIMIT 150`
         )
-        .bind(cfg.noiteAtual)
         .all();
+
+      const parseMeta = (s, ch) => {
+        let m = {};
+        try { m = JSON.parse(s || '{}') || {}; } catch {}
+        return {
+          aparelhoId: m.aparelhoId || String(ch || '').slice(0, 6).toUpperCase(),
+          distanciaM: typeof m.distanciaM === 'number' ? m.distanciaM : null,
+          precisaoGps: typeof m.precisaoGps === 'number' ? m.precisaoGps : null,
+          operadora: m.operadora || '',
+          cidade: m.cidade || '',
+        };
+      };
+
+      const logs = (logsRes.results || []).map((r) => ({
+        id: r.id,
+        noite: r.noite,
+        trackId: r.track_id,
+        nome: r.nome,
+        artistas: r.artistas,
+        artistaPrincipalId: r.artista_principal_id,
+        capa: r.capa,
+        duracaoMs: r.duracao_ms,
+        pedidoPor: r.pedido_por || 'Anônimo',
+        dispositivo: r.dispositivo || '',
+        ...parseMeta(r.meta_json, r.cliente_hash),
+        status: r.status,
+        criadoEm: r.criado_em,
+        enviadaEm: r.enviada_em || null,
+        tocadaEm: r.tocada_em || null,
+      }));
 
       const totalCatalogo = Number(
         (await env.DB.prepare('SELECT COUNT(*) AS n FROM catalogo_faixas').first())?.n || 0
@@ -288,16 +319,8 @@ async function atenderRequisicao(request, env, ctx) {
             motivo: b.motivo,
             criadoEm: b.criado_em,
           })),
-          historico: (historico.results || []).map((h) => ({
-            id: h.id,
-            trackId: h.track_id,
-            nome: h.nome,
-            artistas: h.artistas,
-            capa: h.capa,
-            pedidoPor: h.pedido_por,
-            status: h.status,
-            tocadaEm: h.tocada_em || h.criado_em,
-          })),
+          logs,
+          historico: logs.filter((h) => h.noite === cfg.noiteAtual && (h.status === 'tocando' || h.status === 'tocada')).slice(0, 15),
         },
         200,
         request,
@@ -464,6 +487,36 @@ async function atenderRequisicao(request, env, ctx) {
       } catch (err) {
         return jsonResp({ erro: err.message || 'Erro ao sincronizar playlists.' }, 502, request, env);
       }
+    }
+
+    // POST /adm/bloqueios — bloqueia música ou artista direto do log/histórico
+    if (method === 'POST' && path === '/adm/bloqueios') {
+      const b = await lerJson(request);
+      const tipo = b.tipo === 'artist' ? 'artist' : b.tipo === 'track' ? 'track' : '';
+      const spotifyId = String(b.spotifyId || '').trim();
+      const nome = String(b.nome || '').trim().slice(0, 120);
+      if (!tipo || !spotifyId || !nome) {
+        return jsonResp({ erro: 'Informe tipo, spotifyId e nome para bloquear.' }, 400, request, env);
+      }
+      await env.DB
+        .prepare(
+          `INSERT OR IGNORE INTO bloqueios (id, tipo, spotify_id, nome, motivo, criado_em)
+           VALUES (?, ?, ?, ?, 'Bloqueado pelo histórico', ?)`
+        )
+        .bind(idAleatorio(8), tipo, spotifyId, nome, Date.now())
+        .run();
+      if (tipo === 'artist') {
+        await env.DB
+          .prepare("UPDATE fila SET status = 'removida' WHERE status IN ('pendente', 'aguardando') AND artista_principal_id = ?")
+          .bind(spotifyId)
+          .run();
+      } else {
+        await env.DB
+          .prepare("UPDATE fila SET status = 'removida' WHERE status IN ('pendente', 'aguardando') AND track_id = ?")
+          .bind(spotifyId)
+          .run();
+      }
+      return jsonResp({ ok: true }, 200, request, env);
     }
 
     // DELETE /adm/bloqueios/:id — remove um bloqueio

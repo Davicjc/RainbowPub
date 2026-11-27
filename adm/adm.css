@@ -3551,6 +3551,65 @@ body.com-modal { overflow: hidden; }
   text-overflow: ellipsis;
 }
 
+.musica-log-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.musica-log-filtros .busca {
+  flex: 1;
+  min-width: 220px;
+}
+
+.musica-lista-logs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.musica-log-item {
+  display: grid;
+  grid-template-columns: 62px 42px minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: var(--raio);
+  background-color: var(--superficie-2);
+  border: 1px solid var(--linha);
+}
+
+.musica-log-hora {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--texto-2);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.musica-log-quem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--rosa);
+}
+
+.musica-log-quem strong {
+  color: var(--texto);
+}
+
+.musica-log-device {
+  font-size: 12px;
+  color: var(--apagado);
+}
+
 @media (max-width: 900px) {
   .musica-controles-grid,
   .musica-grade-playlists {
@@ -3559,6 +3618,10 @@ body.com-modal { overflow: hidden; }
 
   .musica-item-fila {
     grid-template-columns: 28px 40px minmax(0, 1fr);
+  }
+
+  .musica-log-item {
+    grid-template-columns: 52px 38px minmax(0, 1fr);
   }
 
   .musica-item-acoes {
