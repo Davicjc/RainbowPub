@@ -53,6 +53,12 @@ import {
   porcoesPossiveis,
   baixaDoPedido,
 } from '../js/estoque.js';
+import {
+  iniciarMusicaAdm,
+  aoAbrirTelaMusica,
+  aoSairTelaMusica,
+  encerrarMusicaAdm,
+} from './musica-adm.js';
 
 const DIAS_SEMANA = [
   'Domingo',
@@ -709,16 +715,23 @@ onAuthStateChanged(auth, (usuario) => {
     iniciarEscutasFirestore();
     iniciarRelogioPedidos();
     carregarRelatorio();
+    iniciarMusicaAdm({
+      obterUsuario: () => estado.usuario,
+      mostrarToast,
+      confirmarAcao,
+      navegarParaTela,
+    });
   } else {
     encerrarEscutasFirestore();
     pararRelogioPedidos();
+    encerrarMusicaAdm();
     painelApp.hidden = true;
     telaLogin.hidden = false;
     document.title = 'Rainbow Pub · Equipe';
   }
 });
 
-// ─── Navegação entre Telas (Pedidos, Cardápio, Página, Bar, Relatórios) ───
+// ─── Navegação entre Telas (Pedidos, Cardápio, Estoque, Música, Página, Bar, Relatórios) ───
 // "Ajustes" no menu junta duas telas: Bar (horários, GPS, locais) e Página (O Rainbow).
 const GRUPO_TELA = { bar: 'ajustes', pagina: 'ajustes' };
 
@@ -729,6 +742,7 @@ function navegarParaTela(nomeTela) {
     pedidos: document.getElementById('tela-pedidos'),
     cardapio: document.getElementById('tela-cardapio'),
     estoque: document.getElementById('tela-estoque'),
+    musica: document.getElementById('tela-musica'),
     pagina: document.getElementById('tela-pagina'),
     bar: document.getElementById('tela-bar'),
     relatorios: document.getElementById('tela-relatorios'),
@@ -749,6 +763,11 @@ function navegarParaTela(nomeTela) {
     carregarRelatorio();
   }
   if (nomeTela === 'estoque') renderizarEstoque();
+  if (nomeTela === 'musica') {
+    aoAbrirTelaMusica();
+  } else {
+    aoSairTelaMusica();
+  }
   if (mudou) window.scrollTo(0, 0);
   aplicarModoBalcao();
 }

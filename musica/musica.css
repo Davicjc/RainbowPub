@@ -1,0 +1,520 @@
+/* Rainbow Pub — Página pública /musica/. Herda tokens e base de ../css/site.css. */
+
+.topo-musica {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 10px var(--margem);
+  background: rgba(15, 11, 14, 0.97);
+  border-bottom: 1px solid var(--fio);
+}
+.topo-musica .voltar { text-decoration: none; }
+
+.status-som {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 12px;
+  border: 1px solid var(--fio-forte);
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--texto-2);
+}
+.status-som__ponto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--apagado);
+}
+.status-som.ligado .status-som__ponto {
+  background: var(--ok);
+  box-shadow: 0 0 0 4px rgba(67, 209, 122, 0.16);
+}
+.status-som.ligado { color: var(--texto); }
+
+.musica {
+  max-width: var(--largura);
+  margin: 0 auto;
+  padding: 22px var(--margem) 120px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 22px;
+}
+.musica > * { min-width: 0; }
+
+.musica__cab { text-align: center; }
+.musica__titulo {
+  margin: 0;
+  font-family: var(--anton);
+  font-weight: 400;
+  font-size: clamp(40px, 12vw, 56px);
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--rosa);
+}
+.musica__sub {
+  margin: 8px auto 0;
+  max-width: 34ch;
+  color: var(--texto-2);
+  font-size: 16.5px;
+}
+
+/* Aviso pausado / desconectado */
+.aviso-musica {
+  padding: 18px;
+  border-radius: var(--raio);
+  background: var(--parede-2);
+  border: 1px solid var(--fio-forte);
+  border-left: 4px solid var(--rosa);
+}
+.aviso-musica h2 {
+  margin: 0 0 4px;
+  font-family: var(--cond);
+  font-size: 22px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--rosa);
+}
+.aviso-musica p {
+  margin: 0;
+  color: var(--texto-2);
+  font-size: 16px;
+}
+
+/* Cartão Tocando Agora */
+.cartao-agora {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border-radius: var(--raio);
+  background: var(--parede-2);
+  border: 1px solid var(--fio-forte);
+}
+.agora-capa {
+  width: 76px;
+  height: 76px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--parede-3);
+  display: grid;
+  place-items: center;
+  color: var(--apagado);
+}
+.agora-capa img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.agora-capa svg {
+  width: 30px;
+  height: 30px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.agora-info { min-width: 0; }
+.agora-etiqueta {
+  display: inline-block;
+  font-family: var(--cond);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--rosa);
+}
+.agora-nome {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--cond);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1.12;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.agora-artista {
+  display: block;
+  margin-top: 2px;
+  font-size: 15px;
+  color: var(--texto-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.agora-prog { margin-top: 10px; }
+.agora-prog__trilho {
+  height: 4px;
+  border-radius: 99px;
+  background: var(--parede-3);
+  overflow: hidden;
+}
+.agora-prog__barra {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: var(--rosa);
+  transition: width 0.6s linear;
+}
+.agora-prog__tempos {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--apagado);
+  font-variant-numeric: tabular-nums;
+}
+
+.aviso-cooldown {
+  margin: 0;
+  padding: 13px 16px;
+  border-radius: 14px;
+  background: var(--parede-3);
+  border: 1px solid var(--fio-forte);
+  color: var(--rosa);
+  font-weight: 600;
+  font-size: 15.5px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Cabeçalhos de bloco */
+.bloco-cab {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.bloco-titulo {
+  margin: 0;
+  font-family: var(--anton);
+  font-weight: 400;
+  font-size: 28px;
+  text-transform: uppercase;
+  color: var(--rosa);
+  line-height: 1.05;
+}
+.bloco-titulo--sec {
+  font-size: 23px;
+  color: var(--texto);
+}
+.bloco-modo,
+.fila-contagem {
+  font-family: var(--cond);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--texto-2);
+}
+
+/* Abas de playlists */
+.abas-playlists {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.abas-playlists::-webkit-scrollbar { display: none; }
+.aba-pl {
+  flex: none;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--fio-forte);
+  border-radius: 999px;
+  background: var(--parede-2);
+  color: var(--texto-2);
+  font-family: var(--cond);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.aba-pl[aria-pressed="true"] {
+  background: var(--rosa);
+  border-color: var(--rosa);
+  color: var(--tinta);
+}
+
+/* Campo de busca */
+.busca-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.busca-icone {
+  position: absolute;
+  left: 16px;
+  width: 20px;
+  height: 20px;
+  stroke: var(--apagado);
+  stroke-width: 2.2;
+  fill: none;
+  pointer-events: none;
+}
+.campo-busca {
+  width: 100%;
+  min-height: 56px;
+  padding: 12px 48px 12px 46px;
+  border: 2px solid var(--fio-forte);
+  border-radius: 14px;
+  background: var(--parede-2);
+  color: var(--texto);
+  font-family: var(--corpo);
+  font-size: 18px;
+  outline: none;
+}
+.campo-busca:focus { border-color: var(--rosa); }
+.campo-busca::placeholder { color: var(--apagado); }
+.busca-limpar {
+  position: absolute;
+  right: 8px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--texto-2);
+  cursor: pointer;
+}
+.busca-limpar svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  fill: none;
+  stroke-linecap: round;
+}
+
+.regras-resumo {
+  margin: 8px 0 12px;
+  font-size: 14px;
+  color: var(--apagado);
+}
+
+/* Lista de resultados e fila */
+.lista-faixas,
+.lista-fila {
+  display: grid;
+  gap: 1px;
+  border-radius: var(--raio);
+  overflow: hidden;
+  border: 1px solid var(--fio);
+  background: var(--fio);
+}
+.lista-faixas:empty { display: none; }
+
+.faixa-item {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  background: var(--parede-2);
+}
+.faixa-capa {
+  width: 54px;
+  height: 54px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--parede-3);
+  display: block;
+}
+.faixa-txt { min-width: 0; }
+.faixa-nome {
+  display: block;
+  font-family: var(--cond);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1.12;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.faixa-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 14.5px;
+  color: var(--texto-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.faixa-meta {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--apagado);
+  font-variant-numeric: tabular-nums;
+}
+
+.btn-pedir-faixa {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid var(--rosa);
+  border-radius: 11px;
+  background: transparent;
+  color: var(--rosa);
+  font-family: var(--cond);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, transform 0.1s;
+}
+.btn-pedir-faixa:hover:not(:disabled) {
+  background: var(--rosa);
+  color: var(--tinta);
+}
+.btn-pedir-faixa:active:not(:disabled) { transform: scale(0.96); }
+.btn-pedir-faixa:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Fila */
+.fila-item {
+  display: grid;
+  grid-template-columns: 32px 48px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  background: var(--parede-2);
+}
+.fila-item--proxima {
+  background: color-mix(in srgb, var(--ok) 9%, var(--parede-2));
+}
+.fila-pos {
+  font-family: var(--anton);
+  font-size: 22px;
+  color: var(--rosa);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.fila-item--proxima .fila-pos { color: var(--ok); }
+.fila-capa {
+  width: 48px;
+  height: 48px;
+  border-radius: 9px;
+  object-fit: cover;
+  background: var(--parede-3);
+}
+.fila-badge {
+  display: inline-block;
+  margin-top: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(67, 209, 122, 0.16);
+  color: var(--ok);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.vazio-musica {
+  margin: 0;
+  padding: 24px 16px;
+  background: var(--parede-2);
+  color: var(--texto-2);
+  text-align: center;
+  font-size: 16px;
+}
+
+.nota-reset {
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--apagado);
+}
+
+/* Folha de confirmação */
+.faixa-resumo {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  margin-bottom: 18px;
+  border-radius: 14px;
+  background: var(--parede-2);
+  border: 1px solid var(--fio-forte);
+}
+.faixa-resumo img {
+  width: 68px;
+  height: 68px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--parede-3);
+}
+.faixa-resumo strong {
+  display: block;
+  font-family: var(--cond);
+  font-size: 22px;
+  line-height: 1.15;
+}
+.faixa-resumo span {
+  display: block;
+  margin-top: 2px;
+  color: var(--texto-2);
+  font-size: 15px;
+}
+
+.turnstile-box {
+  display: flex;
+  justify-content: center;
+  margin: 0 0 16px;
+  min-height: 0;
+}
+
+.nome-auto {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  background: var(--parede-2);
+  border: 1px solid var(--fio);
+  font-size: 16px;
+  color: var(--texto-2);
+}
+.nome-auto strong { color: var(--texto); }
+.nome-auto__trocar {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--fio-forte);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--rosa);
+  font-family: var(--cond);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+@media (min-width: 800px) {
+  .musica { max-width: 720px; }
+}

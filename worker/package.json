@@ -1,0 +1,11 @@
+{
+  "name": "rainbowpub-musica-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --local --port 8787",
+    "deploy": "wrangler deploy",
+    "db:local": "wrangler d1 execute rainbowpub-musica --local --file=./schema.sql",
+    "db:remote": "wrangler d1 execute rainbowpub-musica --remote --file=./schema.sql"
+  }
+}

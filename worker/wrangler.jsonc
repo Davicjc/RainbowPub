@@ -1,0 +1,26 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "rainbowpub-musica",
+  "account_id": "64c6c91c683a8c69631829a2ee6d6679",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": true,
+  "triggers": {
+    "crons": [
+      "* * * * *"
+    ]
+  },
+  "vars": {
+    "FIREBASE_PROJECT_ID": "rainbowpub-ecd71",
+    "SITE_ORIGIN": "https://rainbowpub.cjc.pics",
+    "SPOTIFY_REDIRECT_URI": "https://rainbowpub-musica.rainbowpub.workers.dev/api/musica/oauth/callback",
+    "TURNSTILE_SITE_KEY": ""
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "rainbowpub-musica",
+      "database_id": "ef75ace1-ad89-4026-9f0c-601f047ddd80"
+    }
+  ]
+}

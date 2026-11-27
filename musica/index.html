@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Rainbow Pub · Pedir música</title>
+  <meta name="description" content="Escolha a próxima música do Rainbow Pub direto pelo celular, de dentro do bar.">
+  <meta name="theme-color" content="#0F0B0E">
+  <meta name="color-scheme" content="dark">
+  <meta name="darkreader-lock">
+  <link rel="canonical" href="https://rainbowpub.cjc.pics/musica/">
+  <link rel="icon" href="../img/icone.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&family=Yellowtail&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/site.css">
+  <link rel="stylesheet" href="./musica.css">
+</head>
+<body class="pg-musica">
+  <nav class="topo-musica" aria-label="Navegação">
+    <a class="voltar" href="../">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+      Cardápio
+    </a>
+    <p class="status-som" id="statusSom">
+      <span class="status-som__ponto" aria-hidden="true"></span>
+      <span id="statusSomTexto">Conectando…</span>
+    </p>
+  </nav>
+
+  <main class="musica">
+    <header class="musica__cab">
+      <h1 class="musica__titulo">Som do Rainbow</h1>
+      <p class="musica__sub" id="musicaSub">Escolha a próxima música direto da sua mesa.</p>
+    </header>
+
+    <!-- Aviso quando pedidos estão pausados ou desconectados -->
+    <section class="aviso-musica" id="avisoMusica" hidden role="status">
+      <h2 id="avisoMusicaTitulo">Pedidos de música pausados</h2>
+      <p id="avisoMusicaTexto">Hoje o som está no comando da casa. Aproveite a noite!</p>
+    </section>
+
+    <!-- Tocando agora -->
+    <section class="cartao-agora" id="cartaoAgora" aria-label="Tocando agora">
+      <div class="agora-capa" id="agoraCapa">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      </div>
+      <div class="agora-info">
+        <span class="agora-etiqueta" id="agoraEtiqueta">Tocando agora</span>
+        <strong class="agora-nome" id="agoraNome">Carregando o som…</strong>
+        <span class="agora-artista" id="agoraArtista"></span>
+        <div class="agora-prog" id="agoraProg" hidden>
+          <div class="agora-prog__trilho"><span class="agora-prog__barra" id="agoraBarra"></span></div>
+          <div class="agora-prog__tempos">
+            <span id="agoraAtual">0:00</span>
+            <span id="agoraTotal">0:00</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cooldown ativo -->
+    <p class="aviso-cooldown" id="avisoCooldown" hidden role="status"></p>
+
+    <!-- Escolha / Busca -->
+    <section class="bloco-escolha" id="blocoEscolha" aria-labelledby="tituloEscolha">
+      <div class="bloco-cab">
+        <h2 class="bloco-titulo" id="tituloEscolha">Pedir uma música</h2>
+        <span class="bloco-modo" id="blocoModo"></span>
+      </div>
+
+      <!-- Abas de playlists (só aparece no modo 'playlists') -->
+      <nav class="abas-playlists" id="abasPlaylists" hidden aria-label="Playlists da casa"></nav>
+
+      <div class="busca-wrap">
+        <svg class="busca-icone" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input
+          type="search"
+          id="campoBusca"
+          class="campo-busca"
+          placeholder="Digite música ou artista…"
+          autocomplete="off"
+          enterkeyhint="search"
+          aria-label="Buscar música ou artista"
+        >
+        <button type="button" id="btnLimparBusca" class="busca-limpar" hidden aria-label="Limpar busca">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+
+      <p class="regras-resumo" id="regrasResumo"></p>
+      <div class="lista-faixas" id="listaResultados" aria-live="polite"></div>
+    </section>
+
+    <!-- Fila da noite -->
+    <section class="bloco-fila" aria-labelledby="tituloFila">
+      <div class="bloco-cab">
+        <h2 class="bloco-titulo" id="tituloFila">Pedidos da galera</h2>
+        <span class="fila-contagem" id="filaContagem">0</span>
+      </div>
+      <div class="lista-fila" id="listaFila">
+        <p class="vazio-musica">Carregando fila…</p>
+      </div>
+      <p class="nota-reset">A fila de pedidos recomeça zerada todo dia às 12h.</p>
+    </section>
+
+    <!-- Próximas que já estão na fila/playlist do Spotify da casa -->
+    <section class="bloco-fila" id="blocoSpotifyFila" hidden aria-labelledby="tituloSpotifyFila">
+      <div class="bloco-cab">
+        <h2 class="bloco-titulo bloco-titulo--sec" id="tituloSpotifyFila">A seguir no Spotify</h2>
+        <span class="fila-contagem">Som da casa</span>
+      </div>
+      <div class="lista-fila" id="listaSpotifyFila"></div>
+    </section>
+  </main>
+
+  <!-- Folha de confirmação + GPS + Turnstile -->
+  <div class="folha" id="folhaMusica" role="dialog" aria-modal="true" aria-labelledby="folhaMusicaTitulo" hidden>
+    <div class="folha__caixa">
+      <header class="folha__topo">
+        <h2 class="folha__titulo" id="folhaMusicaTitulo">Pedir música</h2>
+        <button class="folha__fechar" id="folhaMusicaFechar" type="button" aria-label="Fechar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </header>
+      <div class="folha__corpo" id="folhaMusicaCorpo"></div>
+    </div>
+  </div>
+
+  <script type="module" src="./musica.js"></script>
+  <script src="https://footer.davicjc.com/projetos/footer-davi/footer_davicjc.js" defer></script>
+</body>
+</html>

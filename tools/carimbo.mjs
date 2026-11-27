@@ -8,7 +8,7 @@ import { join, extname } from 'node:path';
 
 const raiz = new URL('..', import.meta.url).pathname;
 const versao = (process.env.CF_PAGES_COMMIT_SHA || process.env.VERSAO || String(Date.now())).slice(0, 10);
-const ignorar = new Set(['.git', 'node_modules', 'tools', '.github']);
+const ignorar = new Set(['.git', 'node_modules', 'tools', '.github', 'worker', '_site_publico']);
 
 function arquivos(dir) {
   return readdirSync(dir).flatMap((nome) => {
